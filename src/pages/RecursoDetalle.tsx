@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { PlatformChips } from "@/components/PlatformChips";
-import { DownloadModal } from "@/components/DownloadModal";
+import { DownloadFormModal } from "@/components/DownloadFormModal";
 import { DynamicHeader } from "@/components/DynamicHeader";
 import { SEOHelmet } from "@/components/SEOHelmet";
 import { supabase } from "@/integrations/supabase/client";
@@ -247,6 +246,8 @@ const RecursoDetalle = () => {
     }
   };
 
+  const [showDownloadFormModal, setShowDownloadFormModal] = useState(false);
+
   const handleDownload = () => {
     registrarEvento({
       tipo_evento: 'click',
@@ -254,12 +255,7 @@ const RecursoDetalle = () => {
       recurso_id: id || undefined
     });
     
-    const flujo = recurso as Flujo;
-    if (flujo.link_descarga) {
-      window.open(flujo.link_descarga, '_blank');
-    } else {
-      setShowDownloadModal(true);
-    }
+    setShowDownloadFormModal(true);
   };
 
   if (loading) {
@@ -544,12 +540,13 @@ const RecursoDetalle = () => {
         </div>
       </main>
 
-      {/* Download Modal */}
-      {showDownloadModal && isFlujo && (
-        <DownloadModal
-          isOpen={showDownloadModal}
-          onClose={() => setShowDownloadModal(false)}
-          flujo={recurso as Flujo}
+      {/* Download Form Modal */}
+      {showDownloadFormModal && isFlujo && (
+        <DownloadFormModal
+          isOpen={showDownloadFormModal}
+          onClose={() => setShowDownloadFormModal(false)}
+          flujoNombre={(recurso as Flujo).nombre}
+          linkDescarga={(recurso as Flujo).link_descarga || ''}
         />
       )}
     </div>
