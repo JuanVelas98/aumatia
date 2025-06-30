@@ -85,7 +85,6 @@ const AdminRecursos = () => {
       if (error) {
         console.error('Error fetching flujos:', error);
       } else {
-        // Convert Json fields to typed arrays
         const convertedFlujos = (data || []).map(flujo => ({
           ...flujo,
           plataformas: parseJsonArray(flujo.plataformas) as Platform[],
@@ -107,7 +106,6 @@ const AdminRecursos = () => {
       if (error) {
         console.error('Error fetching tutoriales:', error);
       } else {
-        // Convert Json fields to typed arrays
         const convertedTutoriales = (data || []).map(tutorial => ({
           ...tutorial,
           plataformas: parseJsonArray(tutorial.plataformas) as Platform[]
@@ -154,6 +152,70 @@ const AdminRecursos = () => {
       }
     } catch (error) {
       console.error('Error creating flujo:', error);
+      toast({
+        title: "Error inesperado",
+        description: "Ocurrió un error inesperado. Contacta al administrador.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCreateTutorial = async () => {
+    try {
+      // Validate required fields
+      if (!nuevoTutorial.titulo.trim()) {
+        toast({
+          title: "Campo requerido",
+          description: "El título del tutorial es obligatorio.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!nuevoTutorial.video_url.trim()) {
+        toast({
+          title: "Campo requerido",
+          description: "La URL del video es obligatoria.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Prepare tutorial data without id field for new tutorials
+      const tutorialData = {
+        titulo: nuevoTutorial.titulo.trim(),
+        descripcion: nuevoTutorial.descripcion?.trim() || '',
+        imagen_url: nuevoTutorial.imagen_url?.trim() || '',
+        video_url: nuevoTutorial.video_url.trim(),
+        plataformas: JSON.stringify(plataformas)
+      };
+
+      console.log('Creating tutorial with data:', tutorialData);
+
+      const { data, error } = await supabase
+        .from('tutoriales')
+        .insert([tutorialData]);
+
+      if (error) {
+        console.error('Error creating tutorial:', error);
+        toast({
+          title: "Error creando el tutorial",
+          description: `Hubo un problema al guardar el tutorial: ${error.message}`,
+          variant: "destructive",
+        });
+      } else {
+        console.log('Tutorial created successfully:', data);
+        toast({
+          title: "Tutorial creado exitosamente!",
+          description: "El tutorial se ha guardado correctamente.",
+        });
+        fetchTutoriales();
+        setShowTutorialForm(false);
+        setNuevoTutorial({ id: '', titulo: '', descripcion: '', imagen_url: '', video_url: '', plataformas: [] });
+        setPlataformas([]);
+      }
+    } catch (error) {
+      console.error('Error creating tutorial:', error);
       toast({
         title: "Error inesperado",
         description: "Ocurrió un error inesperado. Contacta al administrador.",
@@ -245,53 +307,39 @@ const AdminRecursos = () => {
     setShowFlujoForm(true);
   };
 
-  const handleCreateTutorial = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('tutoriales')
-        .insert([{
-          ...nuevoTutorial,
-          plataformas: JSON.stringify(plataformas)
-        }]);
-
-      if (error) {
-        console.error('Error creating tutorial:', error);
-        toast({
-          title: "Error creando el tutorial",
-          description: "Hubo un problema al guardar el tutorial. Intenta nuevamente.",
-          variant: "destructive",
-        });
-      } else {
-        console.log('Tutorial created successfully:', data);
-        toast({
-          title: "Tutorial creado exitosamente!",
-          description: "El tutorial se ha guardado correctamente.",
-        });
-        fetchTutoriales();
-        setShowTutorialForm(false);
-        setNuevoTutorial({ id: '', titulo: '', descripcion: '', imagen_url: '', video_url: '', plataformas: [] });
-        setPlataformas([]);
-      }
-    } catch (error) {
-      console.error('Error creating tutorial:', error);
-      toast({
-        title: "Error inesperado",
-        description: "Ocurrió un error inesperado. Contacta al administrador.",
-        variant: "destructive",
-      });
-    }
-  };
-
   const handleUpdateTutorial = async () => {
     if (!editingTutorial) return;
 
     try {
+      if (!nuevoTutorial.titulo.trim()) {
+        toast({
+          title: "Campo requerido",
+          description: "El título del tutorial es obligatorio.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!nuevoTutorial.video_url.trim()) {
+        toast({
+          title: "Campo requerido",
+          description: "La URL del video es obligatoria.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const tutorialData = {
+        titulo: nuevoTutorial.titulo.trim(),
+        descripcion: nuevoTutorial.descripcion?.trim() || '',
+        imagen_url: nuevoTutorial.imagen_url?.trim() || '',
+        video_url: nuevoTutorial.video_url.trim(),
+        plataformas: JSON.stringify(plataformas)
+      };
+
       const { data, error } = await supabase
         .from('tutoriales')
-        .update({
-          ...nuevoTutorial,
-          plataformas: JSON.stringify(plataformas)
-        })
+        .update(tutorialData)
         .eq('id', editingTutorial.id);
 
       if (error) {
@@ -622,12 +670,13 @@ const AdminRecursos = () => {
               {showTutorialForm && (
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="tutorial-titulo">Título del Tutorial</Label>
+                    <Label htmlFor="tutorial-titulo">Título del Tutorial *</Label>
                     <Input
                       id="tutorial-titulo"
                       value={nuevoTutorial.titulo}
                       onChange={(e) => setNuevoTutorial({...nuevoTutorial, titulo: e.target.value})}
                       className={darkMode ? 'bg-gray-700 border-gray-600 text-white' : ''}
+                      required
                     />
                   </div>
                   
@@ -652,12 +701,13 @@ const AdminRecursos = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="tutorial-video_url">URL del Video</Label>
+                    <Label htmlFor="tutorial-video_url">URL del Video *</Label>
                     <Input
                       id="tutorial-video_url"
                       value={nuevoTutorial.video_url}
                       onChange={(e) => setNuevoTutorial({...nuevoTutorial, video_url: e.target.value})}
                       className={darkMode ? 'bg-gray-700 border-gray-600 text-white' : ''}
+                      required
                     />
                   </div>
 
