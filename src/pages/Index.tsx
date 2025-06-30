@@ -33,10 +33,7 @@ const Index = () => {
                 <h2 className="text-5xl font-bold text-aumatia-dark mb-6">
                   Bienvenido a <span className="text-aumatia-blue">Aumatia</span>
                 </h2>
-                <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-                  Accede a nuestros workflows de automatización y tutoriales paso a paso para optimizar tus procesos. 
-                  Transforma tu negocio con soluciones inteligentes y eficientes.
-                </p>
+                <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">Transforma tu negocio con soluciones inteligentes y eficientes.</p>
               </div>
 
               {/* Conversion Section - Main CTA */}
