@@ -96,7 +96,7 @@ const RecursoDetalle = () => {
             ...data,
             plataformas: Array.isArray(data.plataformas) 
               ? data.plataformas as Platform[]
-              : (data.plataformas ? JSON.parse(String(data.plataformas)) as Platform[] : [])
+              : (data.plataformas ? JSON.parse(String(data.plataformas)) as unknown as Platform[] : [])
           };
           setRecurso(processedData);
         }
@@ -117,10 +117,10 @@ const RecursoDetalle = () => {
             ...data,
             pasos: Array.isArray(data.pasos) 
               ? data.pasos as Paso[]
-              : (data.pasos ? JSON.parse(String(data.pasos)) as Paso[] : []),
+              : (data.pasos ? JSON.parse(String(data.pasos)) as unknown as Paso[] : []),
             plataformas: Array.isArray(data.plataformas) 
               ? data.plataformas as Platform[]
-              : (data.plataformas ? JSON.parse(String(data.plataformas)) as Platform[] : [])
+              : (data.plataformas ? JSON.parse(String(data.plataformas)) as unknown as Platform[] : [])
           };
           setRecurso(processedData);
         }
