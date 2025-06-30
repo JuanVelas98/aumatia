@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -41,6 +40,20 @@ interface Tutorial {
   video_url: string;
   plataformas: Platform[];
 }
+
+// Helper functions for type conversion
+const parseJsonArray = (jsonData: any): any[] => {
+  if (!jsonData) return [];
+  if (Array.isArray(jsonData)) return jsonData;
+  if (typeof jsonData === 'string') {
+    try {
+      return JSON.parse(jsonData);
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
 
 const AdminRecursos = () => {
   const [flujos, setFlujos] = useState<Flujo[]>([]);
@@ -89,7 +102,13 @@ const AdminRecursos = () => {
           variant: "destructive",
         });
       } else {
-        setFlujos(flujosData || []);
+        // Convert Json fields to typed arrays
+        const convertedFlujos = (flujosData || []).map(flujo => ({
+          ...flujo,
+          pasos: parseJsonArray(flujo.pasos) as Paso[],
+          plataformas: parseJsonArray(flujo.plataformas) as Platform[]
+        }));
+        setFlujos(convertedFlujos);
       }
 
       // Fetch tutoriales
@@ -106,7 +125,12 @@ const AdminRecursos = () => {
           variant: "destructive",
         });
       } else {
-        setTutoriales(tutorialesData || []);
+        // Convert Json fields to typed arrays
+        const convertedTutoriales = (tutorialesData || []).map(tutorial => ({
+          ...tutorial,
+          plataformas: parseJsonArray(tutorial.plataformas) as Platform[]
+        }));
+        setTutoriales(convertedTutoriales);
       }
     } catch (error) {
       console.error('Error general:', error);
@@ -126,8 +150,8 @@ const AdminRecursos = () => {
             descripcion: flujoForm.descripcion,
             imagen_url: flujoForm.imagen_url,
             link_descarga: flujoForm.link_descarga,
-            pasos: flujoForm.pasos,
-            plataformas: flujoForm.plataformas
+            pasos: JSON.stringify(flujoForm.pasos),
+            plataformas: JSON.stringify(flujoForm.plataformas)
           })
           .eq('id', editingFlujo.id);
 
@@ -146,8 +170,8 @@ const AdminRecursos = () => {
             descripcion: flujoForm.descripcion,
             imagen_url: flujoForm.imagen_url,
             link_descarga: flujoForm.link_descarga,
-            pasos: flujoForm.pasos,
-            plataformas: flujoForm.plataformas
+            pasos: JSON.stringify(flujoForm.pasos),
+            plataformas: JSON.stringify(flujoForm.plataformas)
           });
 
         if (error) throw error;
@@ -181,7 +205,7 @@ const AdminRecursos = () => {
             descripcion: tutorialForm.descripcion,
             imagen_url: tutorialForm.imagen_url,
             video_url: tutorialForm.video_url,
-            plataformas: tutorialForm.plataformas
+            plataformas: JSON.stringify(tutorialForm.plataformas)
           })
           .eq('id', editingTutorial.id);
 
@@ -200,7 +224,7 @@ const AdminRecursos = () => {
             descripcion: tutorialForm.descripcion,
             imagen_url: tutorialForm.imagen_url,
             video_url: tutorialForm.video_url,
-            plataformas: tutorialForm.plataformas
+            plataformas: JSON.stringify(tutorialForm.plataformas)
           });
 
         if (error) throw error;

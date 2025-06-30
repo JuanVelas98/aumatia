@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -8,13 +7,18 @@ import { PlatformChips } from "@/components/PlatformChips";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, ExternalLink, Play, Download, Loader2 } from "lucide-react";
 
+interface Platform {
+  nombre: string;
+  link: string;
+}
+
 interface Flujo {
   id: string;
   nombre: string;
   descripcion: string;
   imagen_url: string;
   link_descarga: string;
-  plataformas: Array<{ nombre: string; link: string }>;
+  plataformas: Platform[];
   creado_en: string;
 }
 
@@ -24,9 +28,23 @@ interface Tutorial {
   descripcion: string;
   imagen_url: string;
   video_url: string;
-  plataformas: Array<{ nombre: string; link: string }>;
+  plataformas: Platform[];
   creado_en: string;
 }
+
+// Helper function for type conversion
+const parseJsonArray = (jsonData: any): any[] => {
+  if (!jsonData) return [];
+  if (Array.isArray(jsonData)) return jsonData;
+  if (typeof jsonData === 'string') {
+    try {
+      return JSON.parse(jsonData);
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
 
 const Recursos = () => {
   const [flujos, setFlujos] = useState<Flujo[]>([]);
@@ -47,7 +65,12 @@ const Recursos = () => {
         if (flujosError) {
           console.error('Error fetching flujos:', flujosError);
         } else {
-          setFlujos(flujosData || []);
+          // Convert Json fields to typed arrays
+          const convertedFlujos = (flujosData || []).map(flujo => ({
+            ...flujo,
+            plataformas: parseJsonArray(flujo.plataformas) as Platform[]
+          }));
+          setFlujos(convertedFlujos);
         }
 
         // Fetch tutoriales
@@ -59,7 +82,12 @@ const Recursos = () => {
         if (tutorialesError) {
           console.error('Error fetching tutoriales:', tutorialesError);
         } else {
-          setTutoriales(tutorialesData || []);
+          // Convert Json fields to typed arrays
+          const convertedTutoriales = (tutorialesData || []).map(tutorial => ({
+            ...tutorial,
+            plataformas: parseJsonArray(tutorial.plataformas) as Platform[]
+          }));
+          setTutoriales(convertedTutoriales);
         }
       } catch (error) {
         console.error('Error general:', error);

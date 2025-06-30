@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,11 @@ import { PlatformChips } from "@/components/PlatformChips";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Download, Check, Play, Copy, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+
+interface Platform {
+  nombre: string;
+  link: string;
+}
 
 interface Paso {
   descripcion: string;
@@ -23,7 +27,7 @@ interface Flujo {
   imagen_url: string;
   link_descarga: string;
   pasos: Paso[];
-  plataformas: Array<{ nombre: string; link: string }>;
+  plataformas: Platform[];
 }
 
 interface Tutorial {
@@ -32,8 +36,22 @@ interface Tutorial {
   descripcion: string;
   imagen_url: string;
   video_url: string;
-  plataformas: Array<{ nombre: string; link: string }>;
+  plataformas: Platform[];
 }
+
+// Helper function for type conversion
+const parseJsonArray = (jsonData: any): any[] => {
+  if (!jsonData) return [];
+  if (Array.isArray(jsonData)) return jsonData;
+  if (typeof jsonData === 'string') {
+    try {
+      return JSON.parse(jsonData);
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
 
 const RecursoDetalle = () => {
   const [searchParams] = useSearchParams();
@@ -62,7 +80,12 @@ const RecursoDetalle = () => {
           if (error) {
             console.error('Error fetching tutorial:', error);
           } else {
-            setTutorial(data);
+            // Convert Json fields to typed arrays
+            const convertedTutorial = {
+              ...data,
+              plataformas: parseJsonArray(data.plataformas) as Platform[]
+            };
+            setTutorial(convertedTutorial);
           }
         } else {
           const { data, error } = await supabase
@@ -74,7 +97,13 @@ const RecursoDetalle = () => {
           if (error) {
             console.error('Error fetching flujo:', error);
           } else {
-            setFlujo(data);
+            // Convert Json fields to typed arrays
+            const convertedFlujo = {
+              ...data,
+              pasos: parseJsonArray(data.pasos) as Paso[],
+              plataformas: parseJsonArray(data.plataformas) as Platform[]
+            };
+            setFlujo(convertedFlujo);
           }
         }
       } catch (error) {
