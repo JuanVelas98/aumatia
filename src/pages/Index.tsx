@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SocialLinks } from "@/components/SocialLinks";
 import { SEOHelmet } from "@/components/SEOHelmet";
-import { BookOpen, Settings, ArrowRight, Zap, Users, Target, Download } from "lucide-react";
+import { BookOpen, Settings, ArrowRight, Zap, Users, Target, Download, MessageCircle } from "lucide-react";
 
 const Index = () => {
   return (
@@ -18,9 +18,9 @@ const Index = () => {
         ogUrl="https://aumatia.lovable.app"
       />
       
-      <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-blue-50">
-        {/* Header */}
-        <header className="bg-aumatia-dark text-white py-8 shadow-lg">
+      <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-blue-50 font-poppins">
+        {/* Header with white background */}
+        <header className="bg-white text-aumatia-dark py-8 shadow-lg border-b">
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
@@ -30,8 +30,8 @@ const Index = () => {
                   className="h-12 w-auto"
                 />
                 <div>
-                  <h1 className="text-3xl font-bold">Aumatia</h1>
-                  <p className="text-lg opacity-90">Sistema de Recursos de Automatización</p>
+                  <h1 className="text-3xl font-bold text-aumatia-dark">Aumatia</h1>
+                  <p className="text-lg text-aumatia-blue font-medium">Automatiza sin miedo, crece sin límites</p>
                 </div>
               </div>
               <SocialLinks iconSize={24} />
@@ -53,25 +53,38 @@ const Index = () => {
                 </p>
               </div>
 
-              {/* Destacado de Recursos - Nueva sección prominente */}
+              {/* Conversion Section - Main CTA */}
               <section className="mb-16 bg-gradient-to-r from-aumatia-blue to-aumatia-dark rounded-3xl p-12 text-white text-center shadow-2xl">
                 <div className="max-w-4xl mx-auto">
                   <h3 className="text-4xl font-bold mb-6">
-                    ¿Buscas recursos gratuitos para automatizar tu negocio?
+                    ¿Listo para automatizar tu negocio?
                   </h3>
                   <p className="text-xl mb-8 opacity-90">
-                    Descarga workflows completos, sigue tutoriales paso a paso y acelera tu productividad con herramientas probadas
+                    Contanos qué procesos querés optimizar y crearemos un flujo personalizado para vos.
                   </p>
-                  <Link to="/recursos">
-                    <Button 
-                      size="lg" 
+                  <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                    <Button
+                      size="lg"
                       className="bg-white text-aumatia-dark hover:bg-gray-100 font-bold text-lg px-12 py-4 rounded-full shadow-lg hover:scale-105 transition-all duration-300"
+                      onClick={() => window.open('https://wa.link/dmvgi0', '_blank')}
                     >
-                      <Download className="mr-3 w-6 h-6" />
-                      Ver recursos gratuitos
-                      <ArrowRight className="ml-3 w-6 h-6" />
+                      <Zap className="mr-3 w-6 h-6" />
+                      Automatizar mi empresa
                     </Button>
-                  </Link>
+                    <div className="text-white/80">
+                      <p className="text-sm mb-2">O explorá nuestros recursos listos para usar</p>
+                      <Link to="/recursos">
+                        <Button 
+                          variant="outline"
+                          size="lg" 
+                          className="border-white/50 text-white hover:bg-white/10 font-semibold px-8 py-3 rounded-full"
+                        >
+                          Ver recursos gratuitos
+                          <ArrowRight className="ml-2 w-5 h-5" />
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
                 </div>
               </section>
 
@@ -168,7 +181,7 @@ const Index = () => {
                 />
                 <div>
                   <h3 className="text-xl font-bold">Aumatia</h3>
-                  <p className="text-gray-300 text-sm">Automatización inteligente para tu negocio</p>
+                  <p className="text-gray-300 text-sm">Automatiza sin miedo, crece sin límites</p>
                 </div>
               </div>
               

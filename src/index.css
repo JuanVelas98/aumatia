@@ -80,11 +80,11 @@
 
 @layer base {
   * {
-    @apply border-border font-inter;
+    @apply border-border font-poppins;
   }
 
   body {
-    @apply bg-white text-aumatia-dark;
+    @apply bg-white text-aumatia-dark font-poppins;
   }
 }
 
@@ -143,4 +143,23 @@
 /* Loading skeleton */
 .skeleton {
   @apply animate-pulse bg-gray-200 rounded;
+}
+
+/* Modern scrollbar for code blocks */
+.overflow-y-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.overflow-y-scroll::-webkit-scrollbar-track {
+  background: #374151;
+  border-radius: 3px;
+}
+
+.overflow-y-scroll::-webkit-scrollbar-thumb {
+  background: #6b7280;
+  border-radius: 3px;
+}
+
+.overflow-y-scroll::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
 }

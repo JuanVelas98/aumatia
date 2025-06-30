@@ -1,15 +1,14 @@
-
 import { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
+import { ModernCheckbox } from "@/components/ui/modern-checkbox";
 import { SocialLinks } from "@/components/SocialLinks";
 import { PlatformChips } from "@/components/PlatformChips";
 import { SEOHelmet } from "@/components/SEOHelmet";
 import { supabase } from "@/integrations/supabase/client";
 import { convertYouTubeUrl, isValidYouTubeUrl } from "@/utils/youtubeHelper";
-import { ArrowLeft, Download, Check, Play, Copy, Loader2 } from "lucide-react";
+import { ArrowLeft, Download, Play, Copy, Loader2, CheckCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 interface Platform {
@@ -127,7 +126,7 @@ const RecursoDetalle = () => {
     
     setCompletedSteps(newCompletedSteps);
     
-    // Si se marca el paso actual, pasar al siguiente
+    // Auto-advance to next step when current step is completed
     if (!completedSteps.includes(stepIndex) && stepIndex === currentStep) {
       const nextStep = stepIndex + 1;
       if (flujo && nextStep < flujo.pasos.length) {
@@ -223,11 +222,11 @@ const RecursoDetalle = () => {
           ogUrl={`https://aumatia.lovable.app/recursos/detalle?id=${tutorial.id}&tipo=tutorial`}
         />
         
-        <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-blue-50">
-          <header className="bg-aumatia-dark text-white py-8 shadow-lg">
+        <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-blue-50 font-poppins">
+          <header className="bg-white text-aumatia-dark py-8 shadow-lg border-b">
             <div className="container mx-auto px-4">
               <div className="max-w-4xl mx-auto">
-                <Link to="/recursos" className="text-aumatia-blue hover:text-white mb-4 inline-flex items-center group transition-colors">
+                <Link to="/recursos" className="text-aumatia-blue hover:text-aumatia-dark mb-4 inline-flex items-center group transition-colors">
                   <ArrowLeft className="mr-2 w-4 h-4 group-hover:-translate-x-1 transition-transform" />
                   Volver a recursos
                 </Link>
@@ -240,7 +239,7 @@ const RecursoDetalle = () => {
                     />
                     <div>
                       <h1 className="text-3xl font-bold">{tutorial.titulo}</h1>
-                      <p className="text-lg opacity-90">Tutorial paso a paso</p>
+                      <p className="text-lg text-aumatia-blue font-medium">Automatiza sin miedo, crece sin límites</p>
                     </div>
                   </div>
                   <SocialLinks iconSize={24} />
@@ -334,11 +333,11 @@ const RecursoDetalle = () => {
         ogUrl={`https://aumatia.lovable.app/recursos/detalle?id=${flujo?.id}`}
       />
       
-      <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-blue-50">
-        <header className="bg-aumatia-dark text-white py-8 shadow-lg">
+      <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-blue-50 font-poppins">
+        <header className="bg-white text-aumatia-dark py-8 shadow-lg border-b">
           <div className="container mx-auto px-4">
             <div className="max-w-4xl mx-auto">
-              <Link to="/recursos" className="text-aumatia-blue hover:text-white mb-4 inline-flex items-center group transition-colors">
+              <Link to="/recursos" className="text-aumatia-blue hover:text-aumatia-dark mb-4 inline-flex items-center group transition-colors">
                 <ArrowLeft className="mr-2 w-4 h-4 group-hover:-translate-x-1 transition-transform" />
                 Volver a recursos
               </Link>
@@ -351,8 +350,8 @@ const RecursoDetalle = () => {
                   />
                   <div>
                     <h1 className="text-3xl font-bold">{flujo?.nombre}</h1>
-                    <p className="text-lg opacity-90">
-                      Workflow de automatización
+                    <p className="text-lg text-aumatia-blue font-medium">
+                      Automatiza sin miedo, crece sin límites
                       {flujo?.link_descarga && <span className="ml-2">⬇️ Descarga gratis al final</span>}
                     </p>
                   </div>
@@ -386,33 +385,10 @@ const RecursoDetalle = () => {
                     <PlatformChips platforms={flujo?.plataformas || []} />
                   </div>
                 </div>
-
-                {/* Video Principal */}
-                {flujo?.pasos && flujo.pasos.length > 0 && flujo.pasos[0].videoUrl && (
-                  <div>
-                    <h3 className="text-xl font-semibold text-aumatia-dark mb-4">🎥 Video Principal</h3>
-                    <div className="video-container">
-                      {isValidYouTubeUrl(flujo.pasos[0].videoUrl) ? (
-                        <iframe
-                          src={convertYouTubeUrl(flujo.pasos[0].videoUrl)}
-                          title="Video principal del flujo"
-                          frameBorder="0"
-                          loading="lazy"
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                        ></iframe>
-                      ) : (
-                        <div className="bg-gray-100 p-8 rounded-lg text-center">
-                          <p className="text-gray-600">🎥 Este video no está disponible</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
               </CardContent>
             </Card>
 
-            {/* Pasos con navegación tipo wizard */}
+            {/* Steps with improved UX */}
             {flujo?.pasos && flujo.pasos.length > 0 && (
               <div className="space-y-6">
                 <h3 className="text-2xl font-bold text-aumatia-dark text-center">
@@ -434,10 +410,6 @@ const RecursoDetalle = () => {
                           ? 'bg-aumatia-blue/5 border-l-4 border-l-aumatia-blue'
                           : 'bg-gray-50 border-l-4 border-l-gray-300'
                       } ${isVisible ? 'block' : 'hidden'}`}
-                      style={{ 
-                        transform: isVisible ? 'translateY(0)' : 'translateY(-20px)',
-                        opacity: isVisible ? 1 : 0 
-                      }}
                     >
                       <CardHeader>
                         <div className="flex items-center justify-between">
@@ -445,48 +417,20 @@ const RecursoDetalle = () => {
                             <span className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${
                               isCompleted ? 'bg-green-500' : 'bg-aumatia-blue'
                             }`}>
-                              {isCompleted ? <Check size={16} /> : index + 1}
+                              {isCompleted ? <CheckCircle size={16} /> : index + 1}
                             </span>
                             Paso {index + 1}
                           </CardTitle>
-                          <div className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`step-${index}`}
-                              checked={isCompleted}
-                              onCheckedChange={() => toggleStep(index)}
-                            />
-                            <label
-                              htmlFor={`step-${index}`}
-                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                            >
-                              ✅ Completar este paso
-                            </label>
-                          </div>
+                          <ModernCheckbox
+                            id={`step-${index}`}
+                            checked={isCompleted}
+                            onCheckedChange={() => toggleStep(index)}
+                            label="✅ Completar este paso"
+                          />
                         </div>
                       </CardHeader>
                       <CardContent className="space-y-6">
-                        <p className="text-gray-700 text-lg leading-relaxed">{paso.descripcion}</p>
-
-                        {paso.codigo && (
-                          <div>
-                            <div className="flex justify-between items-center mb-2">
-                              <h4 className="font-semibold text-aumatia-dark">Código:</h4>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => copyCode(paso.codigo)}
-                                className="text-aumatia-blue border-aumatia-blue hover:bg-aumatia-blue hover:text-white"
-                              >
-                                <Copy size={16} className="mr-1" />
-                                Copiar
-                              </Button>
-                            </div>
-                            <pre className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-sm">
-                              <code>{paso.codigo}</code>
-                            </pre>
-                          </div>
-                        )}
-
+                        {/* Video first (reordered) */}
                         {paso.videoUrl && (
                           <div>
                             <h4 className="font-semibold text-aumatia-dark mb-2 flex items-center gap-2">
@@ -511,6 +455,34 @@ const RecursoDetalle = () => {
                             </div>
                           </div>
                         )}
+
+                        {/* Description second */}
+                        <p className="text-gray-700 text-lg leading-relaxed">{paso.descripcion}</p>
+
+                        {/* Code block last with scroll for long content */}
+                        {paso.codigo && (
+                          <div>
+                            <div className="flex justify-between items-center mb-2">
+                              <h4 className="font-semibold text-aumatia-dark">Código:</h4>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => copyCode(paso.codigo)}
+                                className="text-aumatia-blue border-aumatia-blue hover:bg-aumatia-blue hover:text-white"
+                              >
+                                <Copy size={16} className="mr-1" />
+                                📋 Copiar
+                              </Button>
+                            </div>
+                            <pre 
+                              className={`bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-sm font-mono ${
+                                paso.codigo.length > 200 ? 'max-h-[200px] overflow-y-scroll' : ''
+                              }`}
+                            >
+                              <code>{paso.codigo}</code>
+                            </pre>
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   );
@@ -518,7 +490,7 @@ const RecursoDetalle = () => {
               </div>
             )}
 
-            {/* Download Section - Botón de descarga mejorado */}
+            {/* Download Section - Enhanced */}
             {flujo?.link_descarga && (
               <Card className="border-0 shadow-lg bg-gradient-to-r from-aumatia-blue to-aumatia-dark text-white">
                 <CardContent className="p-8 text-center">
@@ -554,7 +526,7 @@ const RecursoDetalle = () => {
                 />
                 <div>
                   <h3 className="text-xl font-bold">Aumatia</h3>
-                  <p className="text-gray-300 text-sm">Automatización inteligente para tu negocio</p>
+                  <p className="text-gray-300 text-sm">Automatiza sin miedo, crece sin límites</p>
                 </div>
               </div>
               
