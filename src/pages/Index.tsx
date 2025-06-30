@@ -1,22 +1,12 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SocialLinks } from "@/components/SocialLinks";
 import { SEOHelmet } from "@/components/SEOHelmet";
 import { BookOpen, Settings, ArrowRight, Zap, Users, Target, Download, MessageCircle } from "lucide-react";
-
 const Index = () => {
-  return (
-    <>
-      <SEOHelmet 
-        title="Aumatia - Recursos gratuitos para automatizar tu negocio"
-        description="Accede a workflows, tutoriales y herramientas de automatización completamente gratis. Optimiza tu negocio con Aumatia."
-        ogTitle="Aumatia - Recursos de automatización gratuitos"
-        ogDescription="Explora flujos listos para usar, tutoriales prácticos y herramientas de automatización para tu negocio. Totalmente gratis."
-        ogImage="https://i.imgur.com/wR2n4Hg.png"
-        ogUrl="https://aumatia.lovable.app"
-      />
+  return <>
+      <SEOHelmet title="Aumatia - Recursos gratuitos para automatizar tu negocio" description="Accede a workflows, tutoriales y herramientas de automatización completamente gratis. Optimiza tu negocio con Aumatia." ogTitle="Aumatia - Recursos de automatización gratuitos" ogDescription="Explora flujos listos para usar, tutoriales prácticos y herramientas de automatización para tu negocio. Totalmente gratis." ogImage="https://i.imgur.com/wR2n4Hg.png" ogUrl="https://aumatia.lovable.app" />
       
       <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-blue-50 font-poppins">
         {/* Header with white background */}
@@ -24,14 +14,10 @@ const Index = () => {
           <div className="container mx-auto px-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <img 
-                  src="https://i.imgur.com/wR2n4Hg.png" 
-                  alt="Aumatia Logo" 
-                  className="h-12 w-auto"
-                />
+                <img src="https://i.imgur.com/wR2n4Hg.png" alt="Aumatia Logo" className="h-12 w-auto" />
                 <div>
-                  <h1 className="text-3xl font-bold text-aumatia-dark">Aumatia</h1>
-                  <p className="text-lg text-aumatia-blue font-medium">Automatiza sin miedo, crece sin límites</p>
+                  
+                  <p className="text-lg text-aumatia-blue font-medium -bottom-1/3 ">Automatiza sin miedo, crece sin límites</p>
                 </div>
               </div>
               <SocialLinks iconSize={24} />
@@ -63,22 +49,14 @@ const Index = () => {
                     Contanos qué procesos querés optimizar y crearemos un flujo personalizado para vos.
                   </p>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                    <Button
-                      size="lg"
-                      className="bg-white text-aumatia-dark hover:bg-gray-100 font-bold text-lg px-12 py-4 rounded-full shadow-lg hover:scale-105 transition-all duration-300"
-                      onClick={() => window.open('https://wa.link/dmvgi0', '_blank')}
-                    >
+                    <Button size="lg" className="bg-white text-aumatia-dark hover:bg-gray-100 font-bold text-lg px-12 py-4 rounded-full shadow-lg hover:scale-105 transition-all duration-300" onClick={() => window.open('https://wa.link/dmvgi0', '_blank')}>
                       <Zap className="mr-3 w-6 h-6" />
                       Automatizar mi empresa
                     </Button>
                     <div className="text-white/80">
                       <p className="text-sm mb-2">O explorá nuestros recursos listos para usar</p>
                       <Link to="/recursos">
-                        <Button 
-                          variant="outline"
-                          size="lg" 
-                          className="border-white/50 text-white hover:bg-white/10 font-semibold px-8 py-3 rounded-full"
-                        >
+                        <Button variant="outline" size="lg" className="border-white/50 text-white hover:bg-white/10 font-semibold px-8 py-3 rounded-full">
                           Ver recursos gratuitos
                           <ArrowRight className="ml-2 w-5 h-5" />
                         </Button>
@@ -133,10 +111,7 @@ const Index = () => {
                   </CardHeader>
                   <CardContent>
                     <Link to="/recursos">
-                      <Button 
-                        className="w-full bg-aumatia-blue hover:bg-aumatia-dark transition-all duration-300 group"
-                        size="lg"
-                      >
+                      <Button className="w-full bg-aumatia-blue hover:bg-aumatia-dark transition-all duration-300 group" size="lg">
                         Ver Recursos
                         <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
                       </Button>
@@ -174,11 +149,7 @@ const Index = () => {
           <div className="container mx-auto px-4">
             <div className="flex flex-col md:flex-row items-center justify-between gap-6">
               <div className="flex items-center gap-4">
-                <img 
-                  src="https://i.imgur.com/wR2n4Hg.png" 
-                  alt="Aumatia Logo" 
-                  className="h-10 w-auto"
-                />
+                <img src="https://i.imgur.com/wR2n4Hg.png" alt="Aumatia Logo" className="h-10 w-auto" />
                 <div>
                   <h3 className="text-xl font-bold">Aumatia</h3>
                   <p className="text-gray-300 text-sm">Automatiza sin miedo, crece sin límites</p>
@@ -197,8 +168,6 @@ const Index = () => {
           </div>
         </footer>
       </div>
-    </>
-  );
+    </>;
 };
-
 export default Index;
