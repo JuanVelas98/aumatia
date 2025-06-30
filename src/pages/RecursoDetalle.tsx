@@ -1,15 +1,17 @@
+
 import { useState, useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { PlatformChips } from "@/components/PlatformChips";
 import { DownloadModal } from "@/components/DownloadModal";
 import { DynamicHeader } from "@/components/DynamicHeader";
 import { SEOHelmet } from "@/components/SEOHelmet";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Play, Copy, Check, ExternalLink, FileText, Video } from "lucide-react";
+import { ArrowLeft, Copy, Check, ExternalLink, FileText, Video, ChevronDown, ChevronUp, Info } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useEventTracking } from "@/hooks/useEventTracking";
 import { useScrollVisibility } from "@/hooks/useScrollVisibility";
@@ -56,6 +58,7 @@ const RecursoDetalle = () => {
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   const [copiedSteps, setCopiedSteps] = useState<Set<number>>(new Set());
+  const [openSteps, setOpenSteps] = useState<Set<number>>(new Set([0])); // Solo el primer paso abierto
   const { registrarEvento } = useEventTracking();
 
   // Refs para scroll visibility
@@ -74,6 +77,21 @@ const RecursoDetalle = () => {
       fetchRecurso();
     }
   }, [id, tipo]);
+
+  // Función para convertir URL de YouTube a embed
+  const convertToEmbedUrl = (url: string) => {
+    if (!url) return '';
+    
+    // Convertir diferentes formatos de YouTube a embed
+    const youtubeRegex = /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/;
+    const match = url.match(youtubeRegex);
+    
+    if (match && match[1]) {
+      return `https://www.youtube.com/embed/${match[1]}`;
+    }
+    
+    return url; // Si no es YouTube, devolver la URL original
+  };
 
   const fetchRecurso = async () => {
     try {
@@ -134,10 +152,18 @@ const RecursoDetalle = () => {
 
   const handleStepComplete = (stepIndex: number) => {
     const newCompleted = new Set(completedSteps);
+    const newOpen = new Set(openSteps);
+    
     if (completedSteps.has(stepIndex)) {
       newCompleted.delete(stepIndex);
     } else {
       newCompleted.add(stepIndex);
+      
+      // Colapsar el paso actual y abrir el siguiente
+      newOpen.delete(stepIndex);
+      if (stepIndex + 1 < ((recurso as Flujo).pasos?.length || 0)) {
+        newOpen.add(stepIndex + 1);
+      }
       
       // Registrar evento de paso completado
       registrarEvento({
@@ -147,12 +173,38 @@ const RecursoDetalle = () => {
         descripcion: `Paso ${stepIndex + 1} completado`
       });
     }
+    
     setCompletedSteps(newCompleted);
+    setOpenSteps(newOpen);
     
     // Simular guardado en localStorage
     if (id) {
       localStorage.setItem(`steps_${id}`, JSON.stringify(Array.from(newCompleted)));
     }
+  };
+
+  const handleStepToggle = (stepIndex: number) => {
+    // Solo permitir abrir pasos anteriores o el siguiente inmediato si el anterior está completado
+    const canOpen = stepIndex === 0 || 
+                   completedSteps.has(stepIndex - 1) || 
+                   Array.from(completedSteps).some(completed => completed >= stepIndex - 1);
+    
+    if (!canOpen) {
+      toast({
+        title: "Paso bloqueado",
+        description: "Debes completar el paso anterior para acceder a este paso",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const newOpen = new Set(openSteps);
+    if (openSteps.has(stepIndex)) {
+      newOpen.delete(stepIndex);
+    } else {
+      newOpen.add(stepIndex);
+    }
+    setOpenSteps(newOpen);
   };
 
   const handleCopyCode = async (code: string, stepIndex: number) => {
@@ -289,6 +341,29 @@ const RecursoDetalle = () => {
 
           <Separator className="mb-12" />
 
+          {/* Mensaje de bienvenida para flujos */}
+          {isFlujo && (recurso as Flujo).pasos && (recurso as Flujo).pasos.length > 0 && (
+            <div className="mb-8">
+              <Card className="border-l-4 border-l-aumatia-blue bg-blue-50">
+                <CardContent className="pt-6">
+                  <div className="flex items-start gap-3">
+                    <Info className="w-6 h-6 text-aumatia-blue mt-1 flex-shrink-0" />
+                    <div>
+                      <h3 className="font-semibold text-aumatia-dark mb-2">
+                        ¡Bienvenido a tu flujo de automatización!
+                      </h3>
+                      <p className="text-gray-700 leading-relaxed">
+                        A continuación encontrarás todos los pasos necesarios para implementar este flujo. 
+                        Cada paso se desbloqueará automáticamente cuando completes el anterior. 
+                        Tómate tu tiempo y sigue las instrucciones paso a paso para obtener los mejores resultados.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
           {/* Steps Section for Flujos */}
           {isFlujo && (recurso as Flujo).pasos && (recurso as Flujo).pasos.length > 0 && (
             <div ref={stepsRef} className="mb-12">
@@ -296,86 +371,123 @@ const RecursoDetalle = () => {
                 📋 Pasos del flujo
               </h2>
               
-              <div className="space-y-8">
-                {(recurso as Flujo).pasos.map((paso, index) => (
-                  <Card key={index} className={`border-l-4 transition-all duration-300 ${
-                    completedSteps.has(index) 
-                      ? 'border-l-green-500 bg-green-50' 
-                      : 'border-l-aumatia-blue bg-white'
-                  } shadow-lg hover:shadow-xl`}>
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <CardTitle className="flex items-center gap-3 text-aumatia-dark">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white ${
-                              completedSteps.has(index) ? 'bg-green-500' : 'bg-aumatia-blue'
-                            }`}>
-                              {completedSteps.has(index) ? '✓' : index + 1}
+              <div className="space-y-4">
+                {(recurso as Flujo).pasos.map((paso, index) => {
+                  const isOpen = openSteps.has(index);
+                  const isCompleted = completedSteps.has(index);
+                  const canOpen = index === 0 || 
+                                 completedSteps.has(index - 1) || 
+                                 Array.from(completedSteps).some(completed => completed >= index - 1);
+                  
+                  return (
+                    <Card key={index} className={`border-l-4 transition-all duration-300 ${
+                      isCompleted 
+                        ? 'border-l-green-500 bg-green-50' 
+                        : canOpen 
+                          ? 'border-l-aumatia-blue bg-white' 
+                          : 'border-l-gray-300 bg-gray-50'
+                    } shadow-lg hover:shadow-xl`}>
+                      <Collapsible open={isOpen} onOpenChange={() => handleStepToggle(index)}>
+                        <CollapsibleTrigger asChild>
+                          <CardHeader className="cursor-pointer hover:bg-gray-50/50 transition-colors">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white ${
+                                  isCompleted ? 'bg-green-500' : canOpen ? 'bg-aumatia-blue' : 'bg-gray-400'
+                                }`}>
+                                  {isCompleted ? '✓' : index + 1}
+                                </div>
+                                <div>
+                                  <CardTitle className={`${canOpen ? 'text-aumatia-dark' : 'text-gray-500'}`}>
+                                    Paso {index + 1}
+                                  </CardTitle>
+                                  {!canOpen && (
+                                    <Badge variant="secondary" className="mt-1 text-xs">
+                                      Bloqueado
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  variant={isCompleted ? "default" : "outline"}
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleStepComplete(index);
+                                  }}
+                                  className={isCompleted ? "bg-green-500 hover:bg-green-600" : ""}
+                                  disabled={!canOpen}
+                                >
+                                  {isCompleted ? 'Completado' : 'Marcar'}
+                                </Button>
+                                {isOpen ? (
+                                  <ChevronUp className="w-5 h-5 text-gray-500" />
+                                ) : (
+                                  <ChevronDown className="w-5 h-5 text-gray-500" />
+                                )}
+                              </div>
                             </div>
-                            Paso {index + 1}
-                          </CardTitle>
-                          <CardDescription className="text-gray-600 mt-2">
-                            {paso.descripcion}
-                          </CardDescription>
-                        </div>
-                        <Button
-                          variant={completedSteps.has(index) ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => handleStepComplete(index)}
-                          className={completedSteps.has(index) ? "bg-green-500 hover:bg-green-600" : ""}
-                        >
-                          {completedSteps.has(index) ? 'Completado' : 'Marcar'}
-                        </Button>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {paso.codigo && (
-                        <div>
-                          <div className="flex items-center justify-between mb-2">
-                            <h4 className="font-semibold text-aumatia-dark">Código:</h4>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleCopyCode(paso.codigo, index)}
-                              className="gap-2"
-                            >
-                              {copiedSteps.has(index) ? (
-                                <>
-                                  <Check className="w-4 h-4" />
-                                  Copiado
-                                </>
-                              ) : (
-                                <>
-                                  <Copy className="w-4 h-4" />
-                                  Copiar
-                                </>
-                              )}
-                            </Button>
-                          </div>
-                          <pre className="bg-gray-100 p-4 rounded-lg overflow-x-auto border">
-                            <code className="text-sm font-mono">{paso.codigo}</code>
-                          </pre>
-                        </div>
-                      )}
-                      
-                      {paso.videoUrl && (
-                        <div>
-                          <h4 className="font-semibold text-aumatia-dark mb-2">Video explicativo:</h4>
-                          <a
-                            href={paso.videoUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 text-aumatia-blue hover:text-aumatia-dark transition-colors"
-                          >
-                            <Play className="w-4 h-4" />
-                            Ver video del paso
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
+                          </CardHeader>
+                        </CollapsibleTrigger>
+                        
+                        <CollapsibleContent>
+                          <CardContent className="space-y-4 pt-0">
+                            <CardDescription className="text-gray-600">
+                              {paso.descripcion}
+                            </CardDescription>
+
+                            {paso.codigo && (
+                              <div>
+                                <div className="flex items-center justify-between mb-2">
+                                  <h4 className="font-semibold text-aumatia-dark">Código:</h4>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleCopyCode(paso.codigo, index)}
+                                    className="gap-2"
+                                  >
+                                    {copiedSteps.has(index) ? (
+                                      <>
+                                        <Check className="w-4 h-4" />
+                                        Copiado
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Copy className="w-4 h-4" />
+                                        Copiar
+                                      </>
+                                    )}
+                                  </Button>
+                                </div>
+                                <pre className="bg-gray-100 p-4 rounded-lg overflow-x-auto border">
+                                  <code className="text-sm font-mono">{paso.codigo}</code>
+                                </pre>
+                              </div>
+                            )}
+                            
+                            {paso.videoUrl && (
+                              <div>
+                                <h4 className="font-semibold text-aumatia-dark mb-3">Video explicativo:</h4>
+                                <div className="aspect-video w-full max-w-full rounded-lg overflow-hidden shadow-md">
+                                  <iframe
+                                    src={convertToEmbedUrl(paso.videoUrl)}
+                                    title={`Video del paso ${index + 1}`}
+                                    className="w-full h-full"
+                                    frameBorder="0"
+                                    loading="lazy"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowFullScreen
+                                  />
+                                </div>
+                              </div>
+                            )}
+                          </CardContent>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    </Card>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -395,7 +507,7 @@ const RecursoDetalle = () => {
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-3 bg-aumatia-blue text-white px-6 py-3 rounded-lg hover:bg-aumatia-dark transition-colors"
                     >
-                      <Play className="w-5 h-5" />
+                      <Video className="w-5 h-5" />
                       Ver Tutorial
                       <ExternalLink className="w-4 h-4" />
                     </a>
