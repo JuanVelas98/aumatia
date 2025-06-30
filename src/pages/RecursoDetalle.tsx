@@ -95,8 +95,8 @@ const RecursoDetalle = () => {
           const processedData: Tutorial = {
             ...data,
             plataformas: Array.isArray(data.plataformas) 
-              ? data.plataformas as Platform[]
-              : (data.plataformas ? JSON.parse(String(data.plataformas)) as unknown as Platform[] : [])
+              ? data.plataformas as unknown as Platform[]
+              : (data.plataformas ? JSON.parse(String(data.plataformas)) as Platform[] : [])
           };
           setRecurso(processedData);
         }
@@ -116,11 +116,11 @@ const RecursoDetalle = () => {
           const processedData: Flujo = {
             ...data,
             pasos: Array.isArray(data.pasos) 
-              ? data.pasos as Paso[]
-              : (data.pasos ? JSON.parse(String(data.pasos)) as unknown as Paso[] : []),
+              ? data.pasos as unknown as Paso[]
+              : (data.pasos ? JSON.parse(String(data.pasos)) as Paso[] : []),
             plataformas: Array.isArray(data.plataformas) 
-              ? data.plataformas as Platform[]
-              : (data.plataformas ? JSON.parse(String(data.plataformas)) as unknown as Platform[] : [])
+              ? data.plataformas as unknown as Platform[]
+              : (data.plataformas ? JSON.parse(String(data.plataformas)) as Platform[] : [])
           };
           setRecurso(processedData);
         }
