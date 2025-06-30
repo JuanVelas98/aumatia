@@ -11,7 +11,7 @@ import { DownloadModal } from "@/components/DownloadModal";
 import { DynamicHeader } from "@/components/DynamicHeader";
 import { SEOHelmet } from "@/components/SEOHelmet";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Copy, Check, ExternalLink, FileText, Video, ChevronDown, ChevronUp, Info } from "lucide-react";
+import { ArrowLeft, Copy, Check, ExternalLink, FileText, Video, ChevronDown, ChevronUp, Info, Download } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useEventTracking } from "@/hooks/useEventTracking";
 import { useScrollVisibility } from "@/hooks/useScrollVisibility";
@@ -91,6 +91,13 @@ const RecursoDetalle = () => {
     }
     
     return url; // Si no es YouTube, devolver la URL original
+  };
+
+  // Verificar si todos los pasos están completados
+  const areAllStepsCompleted = () => {
+    if (!isFlujo || !(recurso as Flujo).pasos) return false;
+    const totalSteps = (recurso as Flujo).pasos.length;
+    return completedSteps.size === totalSteps && totalSteps > 0;
   };
 
   const fetchRecurso = async () => {
@@ -243,10 +250,16 @@ const RecursoDetalle = () => {
   const handleDownload = () => {
     registrarEvento({
       tipo_evento: 'click',
-      descripcion: 'Botón acceso gratuito clickeado',
+      descripcion: 'Botón descargar flujo gratis clickeado',
       recurso_id: id || undefined
     });
-    setShowDownloadModal(true);
+    
+    const flujo = recurso as Flujo;
+    if (flujo.link_descarga) {
+      window.open(flujo.link_descarga, '_blank');
+    } else {
+      setShowDownloadModal(true);
+    }
   };
 
   if (loading) {
@@ -327,16 +340,6 @@ const RecursoDetalle = () => {
                 <PlatformChips platforms={recurso.plataformas} />
               </div>
             )}
-
-            {isFlujo && (
-              <Button
-                onClick={handleDownload}
-                size="lg"
-                className="bg-aumatia-blue hover:bg-aumatia-dark text-white px-8 py-3 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
-              >
-                🎯 Acceso Gratuito
-              </Button>
-            )}
           </div>
 
           <Separator className="mb-12" />
@@ -344,20 +347,15 @@ const RecursoDetalle = () => {
           {/* Mensaje de bienvenida para flujos */}
           {isFlujo && (recurso as Flujo).pasos && (recurso as Flujo).pasos.length > 0 && (
             <div className="mb-8">
-              <Card className="border-l-4 border-l-aumatia-blue bg-blue-50">
+              <Card className="bg-slate-50 border-l-4 border-l-aumatia-blue">
                 <CardContent className="pt-6">
-                  <div className="flex items-start gap-3">
-                    <Info className="w-6 h-6 text-aumatia-blue mt-1 flex-shrink-0" />
-                    <div>
-                      <h3 className="font-semibold text-aumatia-dark mb-2">
-                        ¡Bienvenido a tu flujo de automatización!
-                      </h3>
-                      <p className="text-gray-700 leading-relaxed">
-                        A continuación encontrarás todos los pasos necesarios para implementar este flujo. 
-                        Cada paso se desbloqueará automáticamente cuando completes el anterior. 
-                        Tómate tu tiempo y sigue las instrucciones paso a paso para obtener los mejores resultados.
-                      </p>
-                    </div>
+                  <div className="text-center">
+                    <h3 className="text-2xl font-bold text-aumatia-dark mb-3">
+                      ¡Bienvenido a tu flujo de automatización!
+                    </h3>
+                    <p className="text-aumatia-blue text-lg font-medium">
+                      ⬇️ El botón para descargar este flujo estará disponible al finalizar todos los pasos.
+                    </p>
                   </div>
                 </CardContent>
               </Card>
@@ -489,6 +487,33 @@ const RecursoDetalle = () => {
                   );
                 })}
               </div>
+            </div>
+          )}
+
+          {/* Sección de descarga completada - Solo para flujos */}
+          {isFlujo && areAllStepsCompleted() && (
+            <div className="mb-12">
+              <Card className="bg-green-50 border-green-200 text-center">
+                <CardContent className="pt-8 pb-8">
+                  <div className="space-y-4">
+                    <div className="text-2xl">🎉</div>
+                    <h3 className="text-2xl font-bold text-green-700">
+                      ¡Has completado todos los pasos!
+                    </h3>
+                    <p className="text-green-600 text-lg">
+                      🎁 Ahora podés descargar tu flujo de automatización
+                    </p>
+                    <Button
+                      onClick={handleDownload}
+                      size="lg"
+                      className="bg-aumatia-blue hover:bg-aumatia-dark text-white px-8 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 hover:-translate-y-1"
+                    >
+                      <Download className="w-5 h-5 mr-2" />
+                      Descargar flujo gratis
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           )}
 
