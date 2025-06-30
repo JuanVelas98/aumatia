@@ -1,9 +1,12 @@
+
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { SocialLinks } from "@/components/SocialLinks";
 import { PlatformChips } from "@/components/PlatformChips";
+import { ResourceFilters } from "@/components/ResourceFilters";
+import { SEOHelmet } from "@/components/SEOHelmet";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, ExternalLink, Play, Download, Loader2 } from "lucide-react";
 
@@ -50,6 +53,7 @@ const Recursos = () => {
   const [flujos, setFlujos] = useState<Flujo[]>([]);
   const [tutoriales, setTutoriales] = useState<Tutorial[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeFilter, setActiveFilter] = useState('all');
 
   useEffect(() => {
     const fetchRecursos = async () => {
@@ -99,220 +103,260 @@ const Recursos = () => {
     fetchRecursos();
   }, []);
 
+  // Filter logic
+  const filteredFlujos = activeFilter === 'tutoriales' ? [] : flujos;
+  const filteredTutoriales = activeFilter === 'flujos' ? [] : tutoriales;
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-blue-50">
-        <header className="bg-aumatia-dark text-white py-8">
-          <div className="container mx-auto px-4">
-            <div className="flex items-center gap-4">
-              <img 
-                src="https://i.imgur.com/cuWJ50n.png" 
-                alt="Aumatia Logo" 
-                className="h-12 w-auto"
-              />
-              <div>
-                <h1 className="text-3xl font-bold">Recursos de Automatización</h1>
-              </div>
-            </div>
-          </div>
-        </header>
-        
-        <div className="container mx-auto px-4 py-20">
-          <div className="flex justify-center items-center">
-            <Loader2 className="w-8 h-8 animate-spin text-aumatia-blue" />
-            <span className="ml-2 text-lg text-aumatia-dark">Cargando recursos...</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-blue-50">
-      {/* Header */}
-      <header className="bg-aumatia-dark text-white py-8 shadow-lg">
-        <div className="container mx-auto px-4">
-          <div className="max-w-6xl mx-auto">
-            <Link to="/" className="text-aumatia-blue hover:text-white mb-4 inline-flex items-center group transition-colors">
-              <ArrowLeft className="mr-2 w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-              Volver al inicio
-            </Link>
-            <div className="flex items-center justify-between">
+      <>
+        <SEOHelmet 
+          title="Cargando recursos... | Aumatia"
+          description="Cargando recursos de automatización gratuitos para tu negocio."
+        />
+        <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-blue-50">
+          <header className="bg-aumatia-dark text-white py-8">
+            <div className="container mx-auto px-4">
               <div className="flex items-center gap-4">
                 <img 
-                  src="https://i.imgur.com/cuWJ50n.png" 
+                  src="https://i.imgur.com/wR2n4Hg.png" 
                   alt="Aumatia Logo" 
                   className="h-12 w-auto"
                 />
                 <div>
-                  <h1 className="text-4xl font-bold">Recursos de Automatización</h1>
-                  <p className="text-lg opacity-90">
-                    Workflows y tutoriales para optimizar tus procesos
-                  </p>
+                  <h1 className="text-3xl font-bold">Recursos de Automatización</h1>
                 </div>
               </div>
-              <SocialLinks iconSize={24} />
             </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-12">
-        <div className="max-w-6xl mx-auto space-y-16">
+          </header>
           
-          {/* Workflows Section */}
-          <section className="animate-fade-in-up">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-aumatia-dark mb-4">
-                🚀 Workflows de Automatización
-              </h2>
-              <p className="text-gray-600 text-lg">
-                Descarga flujos completos y optimizados para tu negocio
-              </p>
+          <main className="container mx-auto px-4 py-20">
+            <div className="flex justify-center items-center">
+              <Loader2 className="w-8 h-8 animate-spin text-aumatia-blue" />
+              <span className="ml-2 text-lg text-aumatia-dark">Cargando recursos...</span>
             </div>
-
-            {flujos.length > 0 ? (
-              <div className="grid md:grid-cols-2 gap-8">
-                {flujos.map((flujo) => (
-                  <Card key={flujo.id} className="card-hover border-0 shadow-lg bg-white overflow-hidden">
-                    <div className="aspect-video relative overflow-hidden">
-                      <img
-                        src={flujo.imagen_url || "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=800&h=400&fit=crop"}
-                        alt={flujo.nombre}
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                      <div className="absolute bottom-4 left-4 right-4">
-                        <h3 className="text-white font-bold text-xl mb-1">{flujo.nombre}</h3>
-                      </div>
-                    </div>
-                    
-                    <CardContent className="p-6">
-                      <CardDescription className="text-gray-600 mb-4 text-base leading-relaxed">
-                        {flujo.descripcion}
-                      </CardDescription>
-
-                      <PlatformChips platforms={flujo.plataformas || []} className="mb-4" />
-
-                      <div className="flex gap-3">
-                        <Link to={`/recursos/detalle?id=${flujo.id}`} className="flex-1">
-                          <Button 
-                            className="w-full bg-aumatia-blue hover:bg-aumatia-dark transition-all duration-300 group"
-                          >
-                            <Play className="mr-2 w-4 h-4" />
-                            Ver Flujo
-                            <ExternalLink className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                          </Button>
-                        </Link>
-                        {flujo.link_descarga && (
-                          <Button 
-                            variant="outline"
-                            className="border-aumatia-blue text-aumatia-blue hover:bg-aumatia-blue hover:text-white"
-                            onClick={() => window.open(flujo.link_descarga, '_blank')}
-                          >
-                            <Download className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12 bg-white rounded-lg shadow-sm">
-                <p className="text-gray-500 text-lg">No hay workflows disponibles en este momento.</p>
-                <p className="text-gray-400">¡Vuelve pronto para ver nuevos recursos!</p>
-              </div>
-            )}
-          </section>
-
-          {/* Tutorials Section */}
-          <section className="animate-fade-in-up">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-aumatia-dark mb-4">
-                🎥 Tutoriales Paso a Paso
-              </h2>
-              <p className="text-gray-600 text-lg">
-                Aprende con videos detallados y fáciles de seguir
-              </p>
-            </div>
-
-            {tutoriales.length > 0 ? (
-              <div className="grid md:grid-cols-2 gap-8">
-                {tutoriales.map((tutorial) => (
-                  <Card key={tutorial.id} className="card-hover border-0 shadow-lg bg-white overflow-hidden">
-                    <div className="aspect-video relative overflow-hidden">
-                      <img
-                        src={tutorial.imagen_url || "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&h=400&fit=crop"}
-                        alt={tutorial.titulo}
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                      <div className="absolute bottom-4 left-4 right-4">
-                        <h3 className="text-white font-bold text-xl mb-1">{tutorial.titulo}</h3>
-                      </div>
-                      <div className="absolute top-4 right-4">
-                        <div className="bg-red-600 text-white px-2 py-1 rounded text-sm font-medium">
-                          VIDEO
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <CardContent className="p-6">
-                      <CardDescription className="text-gray-600 mb-4 text-base leading-relaxed">
-                        {tutorial.descripcion}
-                      </CardDescription>
-
-                      <PlatformChips platforms={tutorial.plataformas || []} className="mb-4" />
-
-                      <Link to={`/recursos/detalle?id=${tutorial.id}&tipo=tutorial`}>
-                        <Button 
-                          className="w-full bg-aumatia-blue hover:bg-aumatia-dark transition-all duration-300 group"
-                        >
-                          <Play className="mr-2 w-4 h-4" />
-                          Ver Tutorial
-                          <ExternalLink className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                        </Button>
-                      </Link>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12 bg-white rounded-lg shadow-sm">
-                <p className="text-gray-500 text-lg">No hay tutoriales disponibles en este momento.</p>
-                <p className="text-gray-400">¡Vuelve pronto para ver nuevos contenidos!</p>
-              </div>
-            )}
-          </section>
-
+          </main>
         </div>
-      </main>
+      </>
+    );
+  }
 
-      {/* Footer */}
-      <footer className="bg-aumatia-dark text-white py-12 mt-16">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="flex items-center gap-4">
-              <img 
-                src="https://i.imgur.com/cuWJ50n.png" 
-                alt="Aumatia Logo" 
-                className="h-10 w-auto"
-              />
-              <div>
-                <h3 className="text-xl font-bold">Aumatia</h3>
-                <p className="text-gray-300 text-sm">Automatización inteligente para tu negocio</p>
+  return (
+    <>
+      <SEOHelmet 
+        title="Recursos gratuitos para automatizar tu negocio | Aumatia"
+        description="Explora flujos listos para usar, tutoriales prácticos y agentes automatizados para tu negocio. Totalmente gratis."
+        ogTitle="Recursos de automatización | Aumatia"
+        ogDescription="Accede a flujos, tutoriales y herramientas sin costo para mejorar tu operación."
+        ogImage="https://i.imgur.com/wR2n4Hg.png"
+        ogUrl="https://aumatia.lovable.app/recursos"
+      />
+      
+      <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-blue-50">
+        {/* Header */}
+        <header className="bg-aumatia-dark text-white py-8 shadow-lg">
+          <div className="container mx-auto px-4">
+            <div className="max-w-6xl mx-auto">
+              <Link to="/" className="text-aumatia-blue hover:text-white mb-4 inline-flex items-center group transition-colors">
+                <ArrowLeft className="mr-2 w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                Volver al inicio
+              </Link>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <img 
+                    src="https://i.imgur.com/wR2n4Hg.png" 
+                    alt="Aumatia Logo" 
+                    className="h-12 w-auto"
+                  />
+                  <div>
+                    <h1 className="text-4xl font-bold">Recursos de Automatización</h1>
+                    <p className="text-lg opacity-90">
+                      Workflows y tutoriales para optimizar tus procesos
+                    </p>
+                  </div>
+                </div>
+                <SocialLinks iconSize={24} />
               </div>
-            </div>
-            
-            <div className="text-center md:text-right">
-              <p className="text-gray-300 mb-2">Síguenos en nuestras redes</p>
-              <SocialLinks />
             </div>
           </div>
-        </div>
-      </footer>
-    </div>
+        </header>
+
+        <main className="container mx-auto px-4 py-12">
+          <div className="max-w-6xl mx-auto space-y-16">
+            
+            {/* Filtros de navegación */}
+            <ResourceFilters 
+              activeFilter={activeFilter}
+              onFilterChange={setActiveFilter}
+              flujosCount={flujos.length}
+              tutorialesCount={tutoriales.length}
+            />
+
+            {/* Workflows Section */}
+            {activeFilter !== 'tutoriales' && (
+              <section className="animate-fade-in-up">
+                <div className="text-center mb-12">
+                  <h2 className="text-3xl font-bold text-aumatia-dark mb-4">
+                    🚀 Workflows de Automatización
+                  </h2>
+                  <p className="text-gray-600 text-lg">
+                    Descarga flujos completos y optimizados para tu negocio
+                  </p>
+                </div>
+
+                {filteredFlujos.length > 0 ? (
+                  <div className="grid md:grid-cols-2 gap-8">
+                    {filteredFlujos.map((flujo) => (
+                      <article key={flujo.id} className="card-hover border-0 shadow-lg bg-white overflow-hidden">
+                        <div className="aspect-video relative overflow-hidden">
+                          <img
+                            src={flujo.imagen_url || "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=800&h=400&fit=crop"}
+                            alt={flujo.nombre}
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            loading="lazy"
+                            onError={(e) => {
+                              e.currentTarget.src = "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=800&h=400&fit=crop";
+                            }}
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                          <div className="absolute bottom-4 left-4 right-4">
+                            <h3 className="text-white font-bold text-xl mb-1">{flujo.nombre}</h3>
+                          </div>
+                        </div>
+                        
+                        <CardContent className="p-6">
+                          <CardDescription className="text-gray-600 mb-4 text-base leading-relaxed">
+                            {flujo.descripcion}
+                          </CardDescription>
+
+                          <PlatformChips platforms={flujo.plataformas || []} className="mb-4" />
+
+                          <div className="flex gap-3">
+                            <Link to={`/recursos/detalle?id=${flujo.id}`} className="flex-1">
+                              <Button 
+                                className="w-full bg-aumatia-blue hover:bg-aumatia-dark transition-all duration-300 group"
+                              >
+                                <Play className="mr-2 w-4 h-4" />
+                                Ver Flujo
+                                <ExternalLink className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                              </Button>
+                            </Link>
+                            {flujo.link_descarga && (
+                              <Button 
+                                variant="outline"
+                                className="border-aumatia-blue text-aumatia-blue hover:bg-aumatia-blue hover:text-white"
+                                onClick={() => window.open(flujo.link_descarga, '_blank')}
+                              >
+                                <Download className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </CardContent>
+                      </article>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 bg-white rounded-lg shadow-sm">
+                    <p className="text-gray-500 text-lg">No hay workflows disponibles en este momento.</p>
+                    <p className="text-gray-400">¡Vuelve pronto para ver nuevos recursos!</p>
+                  </div>
+                )}
+              </section>
+            )}
+
+            {/* Tutorials Section */}
+            {activeFilter !== 'flujos' && (
+              <section className="animate-fade-in-up">
+                <div className="text-center mb-12">
+                  <h2 className="text-3xl font-bold text-aumatia-dark mb-4">
+                    🎥 Tutoriales Paso a Paso
+                  </h2>
+                  <p className="text-gray-600 text-lg">
+                    Aprende con videos detallados y fáciles de seguir
+                  </p>
+                </div>
+
+                {filteredTutoriales.length > 0 ? (
+                  <div className="grid md:grid-cols-2 gap-8">
+                    {filteredTutoriales.map((tutorial) => (
+                      <article key={tutorial.id} className="card-hover border-0 shadow-lg bg-white overflow-hidden">
+                        <div className="aspect-video relative overflow-hidden">
+                          <img
+                            src={tutorial.imagen_url || "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&h=400&fit=crop"}
+                            alt={tutorial.titulo}
+                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                            loading="lazy"
+                            onError={(e) => {
+                              e.currentTarget.src = "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&h=400&fit=crop";
+                            }}
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                          <div className="absolute bottom-4 left-4 right-4">
+                            <h3 className="text-white font-bold text-xl mb-1">{tutorial.titulo}</h3>
+                          </div>
+                          <div className="absolute top-4 right-4">
+                            <div className="bg-red-600 text-white px-2 py-1 rounded text-sm font-medium">
+                              VIDEO
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <CardContent className="p-6">
+                          <CardDescription className="text-gray-600 mb-4 text-base leading-relaxed">
+                            {tutorial.descripcion}
+                          </CardDescription>
+
+                          <PlatformChips platforms={tutorial.plataformas || []} className="mb-4" />
+
+                          <Link to={`/recursos/detalle?id=${tutorial.id}&tipo=tutorial`}>
+                            <Button 
+                              className="w-full bg-aumatia-blue hover:bg-aumatia-dark transition-all duration-300 group"
+                            >
+                              <Play className="mr-2 w-4 h-4" />
+                              Ver Tutorial
+                              <ExternalLink className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                            </Button>
+                          </Link>
+                        </CardContent>
+                      </article>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 bg-white rounded-lg shadow-sm">
+                    <p className="text-gray-500 text-lg">No hay tutoriales disponibles en este momento.</p>
+                    <p className="text-gray-400">¡Vuelve pronto para ver nuevos contenidos!</p>
+                  </div>
+                )}
+              </section>
+            )}
+          </div>
+        </main>
+
+        {/* Footer */}
+        <footer className="bg-aumatia-dark text-white py-12 mt-16">
+          <div className="container mx-auto px-4">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="flex items-center gap-4">
+                <img 
+                  src="https://i.imgur.com/wR2n4Hg.png" 
+                  alt="Aumatia Logo" 
+                  className="h-10 w-auto"
+                />
+                <div>
+                  <h3 className="text-xl font-bold">Aumatia</h3>
+                  <p className="text-gray-300 text-sm">Automatización inteligente para tu negocio</p>
+                </div>
+              </div>
+              
+              <div className="text-center md:text-right">
+                <p className="text-gray-300 mb-2">Síguenos en nuestras redes</p>
+                <SocialLinks />
+              </div>
+            </div>
+          </div>
+        </footer>
+      </div>
+    </>
   );
 };
 
