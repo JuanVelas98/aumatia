@@ -19,62 +19,75 @@ const Index = () => {
       />
       
       <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-blue-50 font-poppins">
-        {/* Header with white background */}
-        <header className="bg-white text-aumatia-dark py-8 shadow-lg border-b">
-          <div className="container mx-auto px-4">
+        {/* Modern Startup Header */}
+        <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-50">
+          <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
+              <Link to="/" className="flex items-center gap-4 hover:opacity-80 transition-opacity">
                 <img 
                   src="https://i.imgur.com/wR2n4Hg.png" 
                   alt="Aumatia Logo" 
-                  className="h-24 w-auto max-h-24 object-contain" 
+                  className="h-16 md:h-20 lg:h-24 w-auto object-contain" 
                 />
-                <div>
-                  <p className="text-lg text-aumatia-blue font-medium">Automatiza sin miedo, crece sin límites</p>
+                <div className="hidden sm:block">
+                  <h1 className="text-xl md:text-2xl font-bold text-aumatia-dark">Aumatia</h1>
+                  <p className="text-sm md:text-base text-aumatia-blue font-medium">Automatiza sin miedo, crece sin límites</p>
                 </div>
+              </Link>
+              
+              <nav className="hidden md:flex items-center gap-6">
+                <Link to="/recursos" className="text-aumatia-dark hover:text-aumatia-blue transition-colors font-medium">
+                  Recursos
+                </Link>
+                <SocialLinks iconSize={20} className="gap-4" />
+              </nav>
+              
+              {/* Mobile menu button */}
+              <div className="md:hidden">
+                <SocialLinks iconSize={20} className="gap-3" />
               </div>
-              <SocialLinks iconSize={24} />
             </div>
           </div>
         </header>
 
         <main>
-          {/* Hero Section */}
-          <section className="py-20">
+          {/* Hero Section - Centered and Large */}
+          <section className="py-16 md:py-24 lg:py-32">
             <div className="container mx-auto px-4">
-              <div className="text-center mb-16 animate-fade-in-up">
-                <h2 className="text-5xl font-bold text-aumatia-dark mb-6">
-                  Bienvenido a <span className="text-aumatia-blue">Aumatia</span>
+              <div className="text-center mb-16 animate-fade-in-up max-w-5xl mx-auto">
+                <h2 className="text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-aumatia-dark mb-8 leading-tight">
+                  Automatiza sin miedo, <br className="hidden md:block" />
+                  <span className="text-aumatia-blue">crece sin límites</span>
                 </h2>
-                <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+                <p className="text-lg md:text-xl lg:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
                   Transforma tu negocio con soluciones inteligentes y eficientes.
                 </p>
               </div>
 
               {/* Conversion Section - Main CTA */}
-              <section className="mb-16 bg-gradient-to-r from-aumatia-blue to-aumatia-dark rounded-3xl p-12 text-white text-center shadow-2xl">
+              <section className="mb-16 bg-gradient-to-r from-aumatia-blue to-aumatia-dark rounded-3xl p-8 md:p-12 text-white text-center shadow-2xl">
                 <div className="max-w-4xl mx-auto">
-                  <h3 className="text-4xl font-bold mb-6">
+                  <h3 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6">
                     ¿Listo para automatizar tu negocio?
                   </h3>
-                  <p className="text-xl mb-8 opacity-90">
+                  <p className="text-lg md:text-xl mb-8 opacity-90">
                     Contanos qué procesos querés optimizar y crearemos un flujo personalizado para vos.
                   </p>
-                  <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                  <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
                     <Button 
                       size="lg" 
-                      className="bg-white text-aumatia-dark hover:bg-gray-100 font-bold text-lg px-12 py-4 rounded-full shadow-lg hover:scale-105 transition-all duration-300" 
+                      className="bg-white text-aumatia-dark hover:bg-gray-100 hover:shadow-lg hover:-translate-y-1 font-bold text-lg px-8 md:px-12 py-4 rounded-full shadow-lg transition-all duration-300" 
                       onClick={() => window.open('https://wa.link/dmvgi0', '_blank')}
                     >
                       <Zap className="mr-3 w-6 h-6" />
                       Automatizar mi empresa
                     </Button>
                     <div className="text-white/80">
-                      <p className="text-sm mb-2">O explorá nuestros recursos listos para usar</p>
+                      <p className="text-sm mb-3">O explorá nuestros recursos listos para usar</p>
                       <Link to="/recursos">
                         <Button 
                           size="lg" 
-                          className="bg-aumatia-blue text-white hover:bg-aumatia-dark font-semibold px-8 py-3 rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300"
+                          className="bg-aumatia-blue text-white hover:bg-aumatia-dark border-2 border-white/20 hover:border-white/40 hover:shadow-lg hover:-translate-y-1 font-semibold px-6 md:px-8 py-3 rounded-full transition-all duration-300"
                         >
                           Ver recursos gratuitos
                           <ArrowRight className="ml-2 w-5 h-5" />
@@ -86,8 +99,8 @@ const Index = () => {
               </section>
 
               {/* Features Grid */}
-              <div className="grid md:grid-cols-3 gap-8 mb-16">
-                <div className="text-center p-6 rounded-lg bg-white shadow-sm card-hover">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 mb-16">
+                <div className="text-center p-6 md:p-8 rounded-lg bg-white shadow-sm card-hover">
                   <div className="w-16 h-16 bg-aumatia-blue/10 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Zap className="w-8 h-8 text-aumatia-blue" />
                   </div>
@@ -95,7 +108,7 @@ const Index = () => {
                   <p className="text-gray-600">Workflows optimizados para maximizar tu productividad</p>
                 </div>
                 
-                <div className="text-center p-6 rounded-lg bg-white shadow-sm card-hover">
+                <div className="text-center p-6 md:p-8 rounded-lg bg-white shadow-sm card-hover">
                   <div className="w-16 h-16 bg-aumatia-blue/10 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Users className="w-8 h-8 text-aumatia-blue" />
                   </div>
@@ -103,7 +116,7 @@ const Index = () => {
                   <p className="text-gray-600">Únete a miles de profesionales que confían en Aumatia</p>
                 </div>
                 
-                <div className="text-center p-6 rounded-lg bg-white shadow-sm card-hover">
+                <div className="text-center p-6 md:p-8 rounded-lg bg-white shadow-sm card-hover sm:col-span-2 lg:col-span-1">
                   <div className="w-16 h-16 bg-aumatia-blue/10 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Target className="w-8 h-8 text-aumatia-blue" />
                   </div>
@@ -113,7 +126,7 @@ const Index = () => {
               </div>
 
               {/* Navigation Cards */}
-              <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+              <div className="grid md:grid-cols-2 gap-6 md:gap-8 max-w-4xl mx-auto">
                 <Card className="card-hover border-0 shadow-lg bg-white">
                   <CardHeader className="pb-4">
                     <div className="flex items-center gap-3">
@@ -130,7 +143,7 @@ const Index = () => {
                   </CardHeader>
                   <CardContent>
                     <Link to="/recursos">
-                      <Button className="w-full bg-aumatia-blue hover:bg-aumatia-dark transition-all duration-300 group" size="lg">
+                      <Button className="w-full bg-aumatia-blue hover:bg-aumatia-dark hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group" size="lg">
                         Ver Recursos
                         <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
                       </Button>
