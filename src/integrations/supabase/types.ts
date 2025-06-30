@@ -19,6 +19,7 @@ export type Database = {
           link_descarga: string | null
           nombre: string
           pasos: Json | null
+          plataformas: Json | null
         }
         Insert: {
           actualizado_en?: string | null
@@ -29,6 +30,7 @@ export type Database = {
           link_descarga?: string | null
           nombre: string
           pasos?: Json | null
+          plataformas?: Json | null
         }
         Update: {
           actualizado_en?: string | null
@@ -39,6 +41,7 @@ export type Database = {
           link_descarga?: string | null
           nombre?: string
           pasos?: Json | null
+          plataformas?: Json | null
         }
         Relationships: []
       }
@@ -49,6 +52,7 @@ export type Database = {
           descripcion: string | null
           id: string
           imagen_url: string | null
+          plataformas: Json | null
           titulo: string
           video_url: string | null
         }
@@ -58,6 +62,7 @@ export type Database = {
           descripcion?: string | null
           id?: string
           imagen_url?: string | null
+          plataformas?: Json | null
           titulo: string
           video_url?: string | null
         }
@@ -67,6 +72,7 @@ export type Database = {
           descripcion?: string | null
           id?: string
           imagen_url?: string | null
+          plataformas?: Json | null
           titulo?: string
           video_url?: string | null
         }

@@ -7,7 +7,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PlatformEditor } from "@/components/PlatformEditor";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { ArrowLeft, Loader2 } from "lucide-react";
+
+interface Platform {
+  nombre: string;
+  link: string;
+}
 
 interface Paso {
   descripcion: string;
@@ -22,6 +30,7 @@ interface Flujo {
   imagen_url: string;
   link_descarga: string;
   pasos: Paso[];
+  plataformas: Platform[];
 }
 
 interface Tutorial {
@@ -30,6 +39,7 @@ interface Tutorial {
   descripcion: string;
   imagen_url: string;
   video_url: string;
+  plataformas: Platform[];
 }
 
 const AdminRecursos = () => {
@@ -37,6 +47,7 @@ const AdminRecursos = () => {
   const [tutoriales, setTutoriales] = useState<Tutorial[]>([]);
   const [editingFlujo, setEditingFlujo] = useState<Flujo | null>(null);
   const [editingTutorial, setEditingTutorial] = useState<Tutorial | null>(null);
+  const [loading, setLoading] = useState(true);
 
   // Estados para formularios
   const [flujoForm, setFlujoForm] = useState<Flujo>({
@@ -44,89 +55,172 @@ const AdminRecursos = () => {
     descripcion: '',
     imagen_url: '',
     link_descarga: '',
-    pasos: [{ descripcion: '', codigo: '', videoUrl: '' }]
+    pasos: [{ descripcion: '', codigo: '', videoUrl: '' }],
+    plataformas: []
   });
 
   const [tutorialForm, setTutorialForm] = useState<Tutorial>({
     titulo: '',
     descripcion: '',
     imagen_url: '',
-    video_url: ''
+    video_url: '',
+    plataformas: []
   });
 
   useEffect(() => {
-    // Simular carga de datos existentes
-    const mockFlujos: Flujo[] = [
-      {
-        id: "1",
-        nombre: "Automatización de Email Marketing",
-        descripcion: "Flujo completo para automatizar campañas de email marketing",
-        imagen_url: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=400&h=250&fit=crop",
-        link_descarga: "https://example.com/download/flujo-email.zip",
-        pasos: [
-          {
-            descripcion: "Configurar proveedor de email",
-            codigo: "const emailConfig = { apiKey: 'key' }",
-            videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ"
-          }
-        ]
-      }
-    ];
-
-    const mockTutoriales: Tutorial[] = [
-      {
-        id: "1",
-        titulo: "Configuración de Webhooks",
-        descripcion: "Tutorial paso a paso para configurar webhooks",
-        imagen_url: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=400&h=250&fit=crop",
-        video_url: "https://www.youtube.com/embed/dQw4w9WgXcQ"
-      }
-    ];
-
-    setFlujos(mockFlujos);
-    setTutoriales(mockTutoriales);
+    fetchData();
   }, []);
 
-  const handleSaveFlujo = () => {
-    if (editingFlujo) {
-      // Actualizar flujo existente
-      setFlujos(flujos.map(f => f.id === editingFlujo.id ? { ...flujoForm, id: editingFlujo.id } : f));
-      toast({
-        title: "Flujo actualizado",
-        description: "El flujo ha sido actualizado correctamente",
-      });
-    } else {
-      // Crear nuevo flujo
-      const newFlujo = { ...flujoForm, id: Date.now().toString() };
-      setFlujos([...flujos, newFlujo]);
-      toast({
-        title: "Flujo creado",
-        description: "El nuevo flujo ha sido creado correctamente",
-      });
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+
+      // Fetch flujos
+      const { data: flujosData, error: flujosError } = await supabase
+        .from('flujos')
+        .select('*')
+        .order('creado_en', { ascending: false });
+
+      if (flujosError) {
+        console.error('Error fetching flujos:', flujosError);
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar los flujos",
+          variant: "destructive",
+        });
+      } else {
+        setFlujos(flujosData || []);
+      }
+
+      // Fetch tutoriales
+      const { data: tutorialesData, error: tutorialesError } = await supabase
+        .from('tutoriales')
+        .select('*')
+        .order('creado_en', { ascending: false });
+
+      if (tutorialesError) {
+        console.error('Error fetching tutoriales:', tutorialesError);
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar los tutoriales",
+          variant: "destructive",
+        });
+      } else {
+        setTutoriales(tutorialesData || []);
+      }
+    } catch (error) {
+      console.error('Error general:', error);
+    } finally {
+      setLoading(false);
     }
-    
-    resetFlujoForm();
   };
 
-  const handleSaveTutorial = () => {
-    if (editingTutorial) {
-      // Actualizar tutorial existente
-      setTutoriales(tutoriales.map(t => t.id === editingTutorial.id ? { ...tutorialForm, id: editingTutorial.id } : t));
+  const handleSaveFlujo = async () => {
+    try {
+      if (editingFlujo) {
+        // Actualizar flujo existente
+        const { error } = await supabase
+          .from('flujos')
+          .update({
+            nombre: flujoForm.nombre,
+            descripcion: flujoForm.descripcion,
+            imagen_url: flujoForm.imagen_url,
+            link_descarga: flujoForm.link_descarga,
+            pasos: flujoForm.pasos,
+            plataformas: flujoForm.plataformas
+          })
+          .eq('id', editingFlujo.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Flujo actualizado",
+          description: "El flujo ha sido actualizado correctamente",
+        });
+      } else {
+        // Crear nuevo flujo
+        const { error } = await supabase
+          .from('flujos')
+          .insert({
+            nombre: flujoForm.nombre,
+            descripcion: flujoForm.descripcion,
+            imagen_url: flujoForm.imagen_url,
+            link_descarga: flujoForm.link_descarga,
+            pasos: flujoForm.pasos,
+            plataformas: flujoForm.plataformas
+          });
+
+        if (error) throw error;
+
+        toast({
+          title: "Flujo creado",
+          description: "El nuevo flujo ha sido creado correctamente",
+        });
+      }
+      
+      resetFlujoForm();
+      fetchData();
+    } catch (error) {
+      console.error('Error saving flujo:', error);
       toast({
-        title: "Tutorial actualizado",
-        description: "El tutorial ha sido actualizado correctamente",
-      });
-    } else {
-      // Crear nuevo tutorial
-      const newTutorial = { ...tutorialForm, id: Date.now().toString() };
-      setTutoriales([...tutoriales, newTutorial]);
-      toast({
-        title: "Tutorial creado",
-        description: "El nuevo tutorial ha sido creado correctamente",
+        title: "Error",
+        description: "No se pudo guardar el flujo",
+        variant: "destructive",
       });
     }
-    
-    resetTutorialForm();
+  };
+
+  const handleSaveTutorial = async () => {
+    try {
+      if (editingTutorial) {
+        // Actualizar tutorial existente
+        const { error } = await supabase
+          .from('tutoriales')
+          .update({
+            titulo: tutorialForm.titulo,
+            descripcion: tutorialForm.descripcion,
+            imagen_url: tutorialForm.imagen_url,
+            video_url: tutorialForm.video_url,
+            plataformas: tutorialForm.plataformas
+          })
+          .eq('id', editingTutorial.id);
+
+        if (error) throw error;
+
+        toast({
+          title: "Tutorial actualizado",
+          description: "El tutorial ha sido actualizado correctamente",
+        });
+      } else {
+        // Crear nuevo tutorial
+        const { error } = await supabase
+          .from('tutoriales')
+          .insert({
+            titulo: tutorialForm.titulo,
+            descripcion: tutorialForm.descripcion,
+            imagen_url: tutorialForm.imagen_url,
+            video_url: tutorialForm.video_url,
+            plataformas: tutorialForm.plataformas
+          });
+
+        if (error) throw error;
+
+        toast({
+          title: "Tutorial creado",
+          description: "El nuevo tutorial ha sido creado correctamente",
+        });
+      }
+      
+      resetTutorialForm();
+      fetchData();
+    } catch (error) {
+      console.error('Error saving tutorial:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo guardar el tutorial",
+        variant: "destructive",
+      });
+    }
   };
 
   const resetFlujoForm = () => {
@@ -135,7 +229,8 @@ const AdminRecursos = () => {
       descripcion: '',
       imagen_url: '',
       link_descarga: '',
-      pasos: [{ descripcion: '', codigo: '', videoUrl: '' }]
+      pasos: [{ descripcion: '', codigo: '', videoUrl: '' }],
+      plataformas: []
     });
     setEditingFlujo(null);
   };
@@ -145,35 +240,77 @@ const AdminRecursos = () => {
       titulo: '',
       descripcion: '',
       imagen_url: '',
-      video_url: ''
+      video_url: '',
+      plataformas: []
     });
     setEditingTutorial(null);
   };
 
   const editFlujo = (flujo: Flujo) => {
-    setFlujoForm(flujo);
+    setFlujoForm({
+      ...flujo,
+      pasos: flujo.pasos || [{ descripcion: '', codigo: '', videoUrl: '' }],
+      plataformas: flujo.plataformas || []
+    });
     setEditingFlujo(flujo);
   };
 
   const editTutorial = (tutorial: Tutorial) => {
-    setTutorialForm(tutorial);
+    setTutorialForm({
+      ...tutorial,
+      plataformas: tutorial.plataformas || []
+    });
     setEditingTutorial(tutorial);
   };
 
-  const deleteFlujo = (id: string) => {
-    setFlujos(flujos.filter(f => f.id !== id));
-    toast({
-      title: "Flujo eliminado",
-      description: "El flujo ha sido eliminado correctamente",
-    });
+  const deleteFlujo = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('flujos')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Flujo eliminado",
+        description: "El flujo ha sido eliminado correctamente",
+      });
+      
+      fetchData();
+    } catch (error) {
+      console.error('Error deleting flujo:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar el flujo",
+        variant: "destructive",
+      });
+    }
   };
 
-  const deleteTutorial = (id: string) => {
-    setTutoriales(tutoriales.filter(t => t.id !== id));
-    toast({
-      title: "Tutorial eliminado", 
-      description: "El tutorial ha sido eliminado correctamente",
-    });
+  const deleteTutorial = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('tutoriales')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Tutorial eliminado", 
+        description: "El tutorial ha sido eliminado correctamente",
+      });
+      
+      fetchData();
+    } catch (error) {
+      console.error('Error deleting tutorial:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar el tutorial",
+        variant: "destructive",
+      });
+    }
   };
 
   const addPaso = () => {
@@ -196,19 +333,57 @@ const AdminRecursos = () => {
     setFlujoForm({ ...flujoForm, pasos: newPasos });
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-blue-50">
+        <header className="bg-aumatia-dark text-white py-8">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center gap-4">
+              <img 
+                src="https://i.imgur.com/cuWJ50n.png" 
+                alt="Aumatia Logo" 
+                className="h-12 w-auto"
+              />
+              <div>
+                <h1 className="text-3xl font-bold">Panel de Administración</h1>
+              </div>
+            </div>
+          </div>
+        </header>
+        
+        <div className="container mx-auto px-4 py-20">
+          <div className="flex justify-center items-center">
+            <Loader2 className="w-8 h-8 animate-spin text-aumatia-blue" />
+            <span className="ml-2 text-lg text-aumatia-dark">Cargando...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-blue-50">
       {/* Header */}
-      <header className="bg-aumatia-dark text-white py-8">
+      <header className="bg-aumatia-dark text-white py-8 shadow-lg">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
-            <Link to="/" className="text-aumatia-blue hover:text-white mb-4 inline-block">
-              ← Volver al inicio
+            <Link to="/" className="text-aumatia-blue hover:text-white mb-4 inline-flex items-center group transition-colors">
+              <ArrowLeft className="mr-2 w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+              Volver al inicio
             </Link>
-            <h1 className="text-4xl font-bold mb-2">Panel de Administración</h1>
-            <p className="text-lg opacity-90">
-              Gestiona workflows y tutoriales de la plataforma
-            </p>
+            <div className="flex items-center gap-4">
+              <img 
+                src="https://i.imgur.com/cuWJ50n.png" 
+                alt="Aumatia Logo" 
+                className="h-12 w-auto"
+              />
+              <div>
+                <h1 className="text-4xl font-bold">Panel de Administración</h1>
+                <p className="text-lg opacity-90">
+                  Gestiona workflows y tutoriales de la plataforma
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </header>
@@ -216,21 +391,25 @@ const AdminRecursos = () => {
       <main className="container mx-auto px-4 py-12">
         <div className="max-w-6xl mx-auto">
           <Tabs defaultValue="flujos" className="space-y-8">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="flujos">Gestión de Flujos</TabsTrigger>
-              <TabsTrigger value="tutoriales">Gestión de Tutoriales</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-2 bg-white shadow-sm">
+              <TabsTrigger value="flujos" className="data-[state=active]:bg-aumatia-blue data-[state=active]:text-white">
+                Gestión de Flujos
+              </TabsTrigger>
+              <TabsTrigger value="tutoriales" className="data-[state=active]:bg-aumatia-blue data-[state=active]:text-white">
+                Gestión de Tutoriales
+              </TabsTrigger>
             </TabsList>
 
             {/* Gestión de Flujos */}
             <TabsContent value="flujos" className="space-y-8">
               {/* Formulario de Flujo */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-aumatia-dark">
+              <Card className="shadow-lg border-0">
+                <CardHeader className="bg-aumatia-dark text-white rounded-t-lg">
+                  <CardTitle>
                     {editingFlujo ? 'Editar Flujo' : 'Crear Nuevo Flujo'}
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="p-8 space-y-6">
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="flujo-nombre">Nombre del Flujo</Label>
@@ -272,6 +451,12 @@ const AdminRecursos = () => {
                       placeholder="https://ejemplo.com/descarga.zip"
                     />
                   </div>
+
+                  {/* Editor de Plataformas */}
+                  <PlatformEditor
+                    platforms={flujoForm.plataformas}
+                    onChange={(plataformas) => setFlujoForm({ ...flujoForm, plataformas })}
+                  />
 
                   {/* Editor de Pasos */}
                   <div>
@@ -346,17 +531,26 @@ const AdminRecursos = () => {
               </Card>
 
               {/* Lista de Flujos Existentes */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-aumatia-dark">Flujos Existentes</CardTitle>
+              <Card className="shadow-lg border-0">
+                <CardHeader className="bg-aumatia-dark text-white rounded-t-lg">
+                  <CardTitle>Flujos Existentes</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-6">
                   <div className="space-y-4">
                     {flujos.map((flujo) => (
-                      <div key={flujo.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div key={flujo.id} className="flex items-center justify-between p-4 border rounded-lg bg-white shadow-sm card-hover">
                         <div>
                           <h3 className="font-semibold text-aumatia-dark">{flujo.nombre}</h3>
                           <p className="text-gray-600 text-sm">{flujo.descripcion}</p>
+                          {flujo.plataformas && flujo.plataformas.length > 0 && (
+                            <div className="flex gap-1 mt-2">
+                              {flujo.plataformas.map((plat, i) => (
+                                <span key={i} className="text-xs bg-aumatia-blue/10 text-aumatia-blue px-2 py-1 rounded">
+                                  {plat.nombre}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                         <div className="flex gap-2">
                           <Button
@@ -377,6 +571,12 @@ const AdminRecursos = () => {
                         </div>
                       </div>
                     ))}
+                    
+                    {flujos.length === 0 && (
+                      <div className="text-center py-8">
+                        <p className="text-gray-500">No hay flujos creados aún.</p>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -385,13 +585,13 @@ const AdminRecursos = () => {
             {/* Gestión de Tutoriales */}
             <TabsContent value="tutoriales" className="space-y-8">
               {/* Formulario de Tutorial */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-aumatia-dark">
+              <Card className="shadow-lg border-0">
+                <CardHeader className="bg-aumatia-dark text-white rounded-t-lg">
+                  <CardTitle>
                     {editingTutorial ? 'Editar Tutorial' : 'Crear Nuevo Tutorial'}
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="p-8 space-y-6">
                   <div className="grid md:grid-cols-2 gap-4">
                     <div>
                       <Label htmlFor="tutorial-titulo">Título del Tutorial</Label>
@@ -434,6 +634,12 @@ const AdminRecursos = () => {
                     />
                   </div>
 
+                  {/* Editor de Plataformas */}
+                  <PlatformEditor
+                    platforms={tutorialForm.plataformas}
+                    onChange={(plataformas) => setTutorialForm({ ...tutorialForm, plataformas })}
+                  />
+
                   <div className="flex gap-4">
                     <Button onClick={handleSaveTutorial} className="bg-aumatia-blue hover:bg-aumatia-blue/90">
                       {editingTutorial ? 'Actualizar Tutorial' : 'Crear Tutorial'}
@@ -448,17 +654,26 @@ const AdminRecursos = () => {
               </Card>
 
               {/* Lista de Tutoriales Existentes */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-aumatia-dark">Tutoriales Existentes</CardTitle>
+              <Card className="shadow-lg border-0">
+                <CardHeader className="bg-aumatia-dark text-white rounded-t-lg">
+                  <CardTitle>Tutoriales Existentes</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-6">
                   <div className="space-y-4">
                     {tutoriales.map((tutorial) => (
-                      <div key={tutorial.id} className="flex items-center justify-between p-4 border rounded-lg">
+                      <div key={tutorial.id} className="flex items-center justify-between p-4 border rounded-lg bg-white shadow-sm card-hover">
                         <div>
                           <h3 className="font-semibold text-aumatia-dark">{tutorial.titulo}</h3>
                           <p className="text-gray-600 text-sm">{tutorial.descripcion}</p>
+                          {tutorial.plataformas && tutorial.plataformas.length > 0 && (
+                            <div className="flex gap-1 mt-2">
+                              {tutorial.plataformas.map((plat, i) => (
+                                <span key={i} className="text-xs bg-aumatia-blue/10 text-aumatia-blue px-2 py-1 rounded">
+                                  {plat.nombre}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                         <div className="flex gap-2">
                           <Button
@@ -479,6 +694,12 @@ const AdminRecursos = () => {
                         </div>
                       </div>
                     ))}
+                    
+                    {tutoriales.length === 0 && (
+                      <div className="text-center py-8">
+                        <p className="text-gray-500">No hay tutoriales creados aún.</p>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
