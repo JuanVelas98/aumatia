@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -6,9 +7,10 @@ import { ModernCheckbox } from "@/components/ui/modern-checkbox";
 import { SocialLinks } from "@/components/SocialLinks";
 import { PlatformChips } from "@/components/PlatformChips";
 import { SEOHelmet } from "@/components/SEOHelmet";
+import { DownloadModal } from "@/components/DownloadModal";
 import { supabase } from "@/integrations/supabase/client";
 import { convertYouTubeUrl, isValidYouTubeUrl } from "@/utils/youtubeHelper";
-import { ArrowLeft, Download, Play, Copy, Loader2, CheckCircle } from "lucide-react";
+import { ArrowLeft, Download, Play, Copy, Loader2, CheckCircle, ChevronDown, ChevronUp, Lock } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 
 interface Platform {
@@ -64,7 +66,8 @@ const RecursoDetalle = () => {
   const [tutorial, setTutorial] = useState<Tutorial | null>(null);
   const [loading, setLoading] = useState(true);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
-  const [currentStep, setCurrentStep] = useState<number>(0);
+  const [openSteps, setOpenSteps] = useState<number[]>([0]); // Solo el primer paso abierto por defecto
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
 
   useEffect(() => {
     const fetchRecurso = async () => {
@@ -83,7 +86,6 @@ const RecursoDetalle = () => {
           if (error) {
             console.error('Error fetching tutorial:', error);
           } else {
-            // Convert Json fields to typed arrays
             const convertedTutorial = {
               ...data,
               plataformas: parseJsonArray(data.plataformas) as Platform[]
@@ -100,7 +102,6 @@ const RecursoDetalle = () => {
           if (error) {
             console.error('Error fetching flujo:', error);
           } else {
-            // Convert Json fields to typed arrays
             const convertedFlujo = {
               ...data,
               pasos: parseJsonArray(data.pasos) as Paso[],
@@ -126,12 +127,30 @@ const RecursoDetalle = () => {
     
     setCompletedSteps(newCompletedSteps);
     
-    // Auto-advance to next step when current step is completed
-    if (!completedSteps.includes(stepIndex) && stepIndex === currentStep) {
+    // Si se marca como completado, cerrar el paso actual y abrir el siguiente
+    if (!completedSteps.includes(stepIndex)) {
+      // Cerrar el paso actual
+      setOpenSteps(prev => prev.filter(i => i !== stepIndex));
+      
+      // Abrir el siguiente paso si existe
       const nextStep = stepIndex + 1;
       if (flujo && nextStep < flujo.pasos.length) {
-        setCurrentStep(nextStep);
+        setOpenSteps(prev => [...prev, nextStep]);
       }
+    }
+  };
+
+  const toggleStepVisibility = (stepIndex: number) => {
+    // Solo permitir abrir si es un paso anterior completado o el siguiente paso disponible
+    const isCompleted = completedSteps.includes(stepIndex);
+    const isPreviousCompleted = stepIndex === 0 || completedSteps.includes(stepIndex - 1);
+    
+    if (isCompleted || isPreviousCompleted) {
+      setOpenSteps(prev => 
+        prev.includes(stepIndex) 
+          ? prev.filter(i => i !== stepIndex)
+          : [...prev, stepIndex]
+      );
     }
   };
 
@@ -147,6 +166,10 @@ const RecursoDetalle = () => {
     }
   };
 
+  const canAccessStep = (stepIndex: number) => {
+    return stepIndex === 0 || completedSteps.includes(stepIndex - 1);
+  };
+
   if (loading) {
     return (
       <>
@@ -155,13 +178,13 @@ const RecursoDetalle = () => {
           description="Cargando recurso de automatización."
         />
         <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-blue-50">
-          <header className="bg-aumatia-dark text-white py-8">
+          <header className="bg-white text-aumatia-dark py-8 shadow-lg border-b">
             <div className="container mx-auto px-4">
               <div className="flex items-center gap-4">
                 <img 
                   src="https://i.imgur.com/wR2n4Hg.png" 
                   alt="Aumatia Logo" 
-                  className="h-12 w-auto"
+                  className="h-24 w-auto max-h-24 object-contain"
                 />
                 <div>
                   <h1 className="text-3xl font-bold">Cargando recurso...</h1>
@@ -189,9 +212,9 @@ const RecursoDetalle = () => {
           description="El recurso solicitado no se encontró."
         />
         <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-blue-50">
-          <header className="bg-aumatia-dark text-white py-8">
+          <header className="bg-white text-aumatia-dark py-8 shadow-lg border-b">
             <div className="container mx-auto px-4">
-              <Link to="/recursos" className="text-aumatia-blue hover:text-white inline-flex items-center group">
+              <Link to="/recursos" className="text-aumatia-blue hover:text-aumatia-dark inline-flex items-center group">
                 <ArrowLeft className="mr-2 w-4 h-4 group-hover:-translate-x-1 transition-transform" />
                 Volver a recursos
               </Link>
@@ -235,7 +258,7 @@ const RecursoDetalle = () => {
                     <img 
                       src="https://i.imgur.com/wR2n4Hg.png" 
                       alt="Aumatia Logo" 
-                      className="h-12 w-auto"
+                      className="h-24 w-auto max-h-24 object-contain"
                     />
                     <div>
                       <h1 className="text-3xl font-bold">{tutorial.titulo}</h1>
@@ -305,7 +328,7 @@ const RecursoDetalle = () => {
                   />
                   <div>
                     <h3 className="text-xl font-bold">Aumatia</h3>
-                    <p className="text-gray-300 text-sm">Automatización inteligente para tu negocio</p>
+                    <p className="text-gray-300 text-sm">Automatiza sin miedo, crece sin límites</p>
                   </div>
                 </div>
                 
@@ -346,7 +369,7 @@ const RecursoDetalle = () => {
                   <img 
                     src="https://i.imgur.com/wR2n4Hg.png" 
                     alt="Aumatia Logo" 
-                    className="h-12 w-auto"
+                    className="h-24 w-auto max-h-24 object-contain"
                   />
                   <div>
                     <h1 className="text-3xl font-bold">{flujo?.nombre}</h1>
@@ -396,9 +419,9 @@ const RecursoDetalle = () => {
                 </h3>
                 
                 {flujo.pasos.map((paso, index) => {
-                  const isCurrentStep = index === currentStep;
                   const isCompleted = completedSteps.includes(index);
-                  const isVisible = isCurrentStep || isCompleted;
+                  const isOpen = openSteps.includes(index);
+                  const canAccess = canAccessStep(index);
                   
                   return (
                     <Card 
@@ -406,84 +429,108 @@ const RecursoDetalle = () => {
                       className={`border-0 shadow-lg transition-all duration-500 ${
                         isCompleted
                           ? 'bg-green-50 border-l-4 border-l-green-500' 
-                          : isCurrentStep
+                          : canAccess
                           ? 'bg-aumatia-blue/5 border-l-4 border-l-aumatia-blue'
                           : 'bg-gray-50 border-l-4 border-l-gray-300'
-                      } ${isVisible ? 'block' : 'hidden'}`}
+                      }`}
                     >
                       <CardHeader>
                         <div className="flex items-center justify-between">
                           <CardTitle className="text-aumatia-dark flex items-center gap-3">
                             <span className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${
-                              isCompleted ? 'bg-green-500' : 'bg-aumatia-blue'
+                              isCompleted ? 'bg-green-500' : canAccess ? 'bg-aumatia-blue' : 'bg-gray-400'
                             }`}>
                               {isCompleted ? <CheckCircle size={16} /> : index + 1}
                             </span>
                             Paso {index + 1}
                           </CardTitle>
-                          <ModernCheckbox
-                            id={`step-${index}`}
-                            checked={isCompleted}
-                            onCheckedChange={() => toggleStep(index)}
-                            label="✅ Completar este paso"
-                          />
+                          
+                          <div className="flex items-center gap-2">
+                            {canAccess && (
+                              <ModernCheckbox
+                                id={`step-${index}`}
+                                checked={isCompleted}
+                                onCheckedChange={() => toggleStep(index)}
+                                label="Completar"
+                              />
+                            )}
+                            
+                            {canAccess ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => toggleStepVisibility(index)}
+                                className="p-2"
+                              >
+                                {isOpen ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                              </Button>
+                            ) : (
+                              <div className="flex items-center gap-2 text-gray-500 text-sm">
+                                <Lock size={16} />
+                                🔒 Completá el paso anterior
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </CardHeader>
-                      <CardContent className="space-y-6">
-                        {/* Video first (reordered) */}
-                        {paso.videoUrl && (
-                          <div>
-                            <h4 className="font-semibold text-aumatia-dark mb-2 flex items-center gap-2">
-                              <Play size={18} />
-                              Video del paso:
-                            </h4>
-                            <div className="video-container">
-                              {isValidYouTubeUrl(paso.videoUrl) ? (
-                                <iframe
-                                  src={convertYouTubeUrl(paso.videoUrl)}
-                                  title={`Video del paso ${index + 1}`}
-                                  frameBorder="0"
-                                  loading="lazy"
-                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                  allowFullScreen
-                                ></iframe>
-                              ) : (
-                                <div className="bg-gray-100 p-8 rounded-lg text-center">
-                                  <p className="text-gray-600">🎥 Este video no está disponible</p>
-                                </div>
-                              )}
+                      
+                      {isOpen && canAccess && (
+                        <CardContent className="space-y-6">
+                          {/* Video first (reordered) */}
+                          {paso.videoUrl && (
+                            <div>
+                              <h4 className="font-semibold text-aumatia-dark mb-2 flex items-center gap-2">
+                                <Play size={18} />
+                                Video del paso:
+                              </h4>
+                              <div className="video-container">
+                                {isValidYouTubeUrl(paso.videoUrl) ? (
+                                  <iframe
+                                    src={convertYouTubeUrl(paso.videoUrl)}
+                                    title={`Video del paso ${index + 1}`}
+                                    frameBorder="0"
+                                    loading="lazy"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowFullScreen
+                                  ></iframe>
+                                ) : (
+                                  <div className="bg-gray-100 p-8 rounded-lg text-center">
+                                    <p className="text-gray-600">🎥 Este video no está disponible</p>
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          )}
 
-                        {/* Description second */}
-                        <p className="text-gray-700 text-lg leading-relaxed">{paso.descripcion}</p>
+                          {/* Description second */}
+                          <p className="text-gray-700 text-lg leading-relaxed">{paso.descripcion}</p>
 
-                        {/* Code block last with scroll for long content */}
-                        {paso.codigo && (
-                          <div>
-                            <div className="flex justify-between items-center mb-2">
-                              <h4 className="font-semibold text-aumatia-dark">Código:</h4>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => copyCode(paso.codigo)}
-                                className="text-aumatia-blue border-aumatia-blue hover:bg-aumatia-blue hover:text-white"
+                          {/* Code block last with scroll for long content */}
+                          {paso.codigo && (
+                            <div>
+                              <div className="flex justify-between items-center mb-2">
+                                <h4 className="font-semibold text-aumatia-dark">Código:</h4>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => copyCode(paso.codigo)}
+                                  className="text-aumatia-blue border-aumatia-blue hover:bg-aumatia-blue hover:text-white"
+                                >
+                                  <Copy size={16} className="mr-1" />
+                                  📋 Copiar
+                                </Button>
+                              </div>
+                              <pre 
+                                className={`bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-sm font-mono ${
+                                  paso.codigo.length > 200 ? 'max-h-[200px] overflow-y-scroll' : ''
+                                }`}
                               >
-                                <Copy size={16} className="mr-1" />
-                                📋 Copiar
-                              </Button>
+                                <code>{paso.codigo}</code>
+                              </pre>
                             </div>
-                            <pre 
-                              className={`bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto text-sm font-mono ${
-                                paso.codigo.length > 200 ? 'max-h-[200px] overflow-y-scroll' : ''
-                              }`}
-                            >
-                              <code>{paso.codigo}</code>
-                            </pre>
-                          </div>
-                        )}
-                      </CardContent>
+                          )}
+                        </CardContent>
+                      )}
                     </Card>
                   );
                 })}
@@ -502,7 +549,7 @@ const RecursoDetalle = () => {
                   <Button
                     size="lg"
                     className="bg-white text-aumatia-dark hover:bg-gray-100 font-semibold px-12 py-4 text-lg rounded-full shadow-lg hover:scale-105 transition-all duration-300"
-                    onClick={() => window.open(flujo.link_descarga, '_blank')}
+                    onClick={() => setShowDownloadModal(true)}
                   >
                     <Download className="mr-3 w-6 h-6" />
                     ⬇️ Descargar este flujo
@@ -513,6 +560,18 @@ const RecursoDetalle = () => {
 
           </div>
         </main>
+
+        {/* Download Modal */}
+        {flujo && (
+          <DownloadModal
+            isOpen={showDownloadModal}
+            onClose={() => setShowDownloadModal(false)}
+            flujo={{
+              nombre: flujo.nombre,
+              link_descarga: flujo.link_descarga
+            }}
+          />
+        )}
 
         {/* Footer */}
         <footer className="bg-aumatia-dark text-white py-12 mt-16">
