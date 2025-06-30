@@ -149,7 +149,7 @@ const AdminRecursos = () => {
         });
         fetchFlujos();
         setShowFlujoForm(false);
-        setNuevoFlujo({ nombre: '', descripcion: '', imagen_url: '', link_descarga: '', pasos: [] });
+        setNuevoFlujo({ id: '', nombre: '', descripcion: '', imagen_url: '', link_descarga: '', plataformas: [], pasos: [] });
         setPlataformas([]);
       }
     } catch (error) {
@@ -190,7 +190,7 @@ const AdminRecursos = () => {
         });
         fetchFlujos();
         setEditingFlujo(null);
-        setNuevoFlujo({ nombre: '', descripcion: '', imagen_url: '', link_descarga: '', pasos: [] });
+        setNuevoFlujo({ id: '', nombre: '', descripcion: '', imagen_url: '', link_descarga: '', plataformas: [], pasos: [] });
         setPlataformas([]);
       }
     } catch (error) {
@@ -269,7 +269,7 @@ const AdminRecursos = () => {
         });
         fetchTutoriales();
         setShowTutorialForm(false);
-        setNuevoTutorial({ titulo: '', descripcion: '', imagen_url: '', video_url: '', plataformas: [] });
+        setNuevoTutorial({ id: '', titulo: '', descripcion: '', imagen_url: '', video_url: '', plataformas: [] });
         setPlataformas([]);
       }
     } catch (error) {
@@ -309,7 +309,7 @@ const AdminRecursos = () => {
         });
         fetchTutoriales();
         setEditingTutorial(null);
-        setNuevoTutorial({ titulo: '', descripcion: '', imagen_url: '', video_url: '', plataformas: [] });
+        setNuevoTutorial({ id: '', titulo: '', descripcion: '', imagen_url: '', video_url: '', plataformas: [] });
         setPlataformas([]);
       }
     } catch (error) {
@@ -363,11 +363,9 @@ const AdminRecursos = () => {
 
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
-    // Save to localStorage
     localStorage.setItem('adminDarkMode', (!darkMode).toString());
   };
 
-  // Load dark mode preference on component mount
   useEffect(() => {
     const savedDarkMode = localStorage.getItem('adminDarkMode');
     if (savedDarkMode) {
@@ -471,7 +469,6 @@ const AdminRecursos = () => {
               
               {showFlujoForm && (
                 <CardContent className="space-y-4">
-                  {/* Form fields with dark mode styling */}
                   <div className="space-y-2">
                     <Label htmlFor="flujo-nombre">Nombre del Flujo</Label>
                     <Input
@@ -515,8 +512,8 @@ const AdminRecursos = () => {
                   <div className="space-y-2">
                     <Label>Plataformas</Label>
                     <PlatformEditor
-                      plataformas={plataformas}
-                      setPlataformas={setPlataformas}
+                      platforms={plataformas}
+                      setPlatforms={setPlataformas}
                       darkMode={darkMode}
                     />
                   </div>
@@ -542,7 +539,7 @@ const AdminRecursos = () => {
                       <Button 
                         onClick={() => {
                           setEditingFlujo(null);
-                          setNuevoFlujo({ nombre: '', descripcion: '', imagen_url: '', link_descarga: '', pasos: [] });
+                          setNuevoFlujo({ id: '', nombre: '', descripcion: '', imagen_url: '', link_descarga: '', plataformas: [], pasos: [] });
                           setPlataformas([]);
                         }}
                         variant="outline"
@@ -556,7 +553,7 @@ const AdminRecursos = () => {
               )}
             </Card>
 
-            {/* Existing Flujos List with dark mode styling */}
+            {/* Existing Flujos List */}
             <div className="grid gap-4">
               {flujos.map((flujo) => (
                 <Card key={flujo.id} className={`${
@@ -603,7 +600,7 @@ const AdminRecursos = () => {
             </div>
           </TabsContent>
 
-          {/* Tutoriales Tab - Similar structure with dark mode styling */}
+          {/* Tutoriales Tab */}
           <TabsContent value="tutoriales" className="space-y-6">
             <Card className={`${
               darkMode 
@@ -625,7 +622,6 @@ const AdminRecursos = () => {
               
               {showTutorialForm && (
                 <CardContent className="space-y-4">
-                  {/* Form fields with dark mode styling */}
                   <div className="space-y-2">
                     <Label htmlFor="tutorial-titulo">Título del Tutorial</Label>
                     <Input
@@ -669,8 +665,8 @@ const AdminRecursos = () => {
                   <div className="space-y-2">
                     <Label>Plataformas</Label>
                     <PlatformEditor
-                      plataformas={plataformas}
-                      setPlataformas={setPlataformas}
+                      platforms={plataformas}
+                      setPlatforms={setPlataformas}
                       darkMode={darkMode}
                     />
                   </div>
@@ -686,7 +682,7 @@ const AdminRecursos = () => {
                       <Button 
                         onClick={() => {
                           setEditingTutorial(null);
-                          setNuevoTutorial({ titulo: '', descripcion: '', imagen_url: '', video_url: '', plataformas: [] });
+                          setNuevoTutorial({ id: '', titulo: '', descripcion: '', imagen_url: '', video_url: '', plataformas: [] });
                           setPlataformas([]);
                         }}
                         variant="outline"
@@ -700,7 +696,7 @@ const AdminRecursos = () => {
               )}
             </Card>
 
-            {/* Existing Tutoriales List with dark mode styling */}
+            {/* Existing Tutoriales List */}
             <div className="grid gap-4">
               {tutoriales.map((tutorial) => (
                 <Card key={tutorial.id} className={`${

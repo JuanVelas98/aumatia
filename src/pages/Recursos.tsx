@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,7 @@ import { PlatformChips } from "@/components/PlatformChips";
 import { ResourceFilters } from "@/components/ResourceFilters";
 import { SEOHelmet } from "@/components/SEOHelmet";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, ExternalLink, Play, Download, Loader2 } from "lucide-react";
+import { ArrowLeft, ExternalLink, Play, Loader2 } from "lucide-react";
 
 interface Platform {
   nombre: string;
@@ -45,11 +46,13 @@ const parseJsonArray = (jsonData: any): any[] => {
   }
   return [];
 };
+
 const Recursos = () => {
   const [flujos, setFlujos] = useState<Flujo[]>([]);
   const [tutoriales, setTutoriales] = useState<Tutorial[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('all');
+
   useEffect(() => {
     const fetchRecursos = async () => {
       try {
@@ -102,24 +105,21 @@ const Recursos = () => {
   // Filter logic
   const filteredFlujos = activeFilter === 'tutoriales' ? [] : flujos;
   const filteredTutoriales = activeFilter === 'flujos' ? [] : tutoriales;
+
   if (loading) {
     return <>
         <SEOHelmet title="Cargando recursos... | Aumatia" description="Cargando recursos de automatización gratuitos para tu negocio." />
         <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-blue-50">
           {/* Modern Header */}
           <header className="bg-white border-b border-gray-200 shadow-sm">
-            <div className="container mx-auto px-4 py-4">
+            <div className="container mx-auto px-4 py-6">
               <div className="flex items-center justify-between">
                 <Link to="/" className="flex items-center gap-4 hover:opacity-80 transition-opacity">
                   <img 
                     src="https://i.imgur.com/wR2n4Hg.png" 
                     alt="Aumatia Logo" 
-                    className="h-16 md:h-20 lg:h-24 w-auto object-contain" 
+                    className="h-24 md:h-28 lg:h-32 w-auto object-contain" 
                   />
-                  <div className="hidden sm:block">
-                    <h1 className="text-xl md:text-2xl font-bold text-aumatia-dark">Aumatia</h1>
-                    <p className="text-sm md:text-base text-aumatia-blue font-medium">Automatiza sin miedo, crece sin límites</p>
-                  </div>
                 </Link>
                 <SocialLinks iconSize={20} className="gap-4" />
               </div>
@@ -135,38 +135,41 @@ const Recursos = () => {
         </div>
       </>;
   }
+
   return <>
       <SEOHelmet title="Recursos gratuitos para automatizar tu negocio | Aumatia" description="Explora flujos listos para usar, tutoriales prácticos y agentes automatizados para tu negocio. Totalmente gratis." ogTitle="Recursos de automatización | Aumatia" ogDescription="Accede a flujos, tutoriales y herramientas sin costo para mejorar tu operación." ogImage="https://i.imgur.com/wR2n4Hg.png" ogUrl="https://aumatia.lovable.app/recursos" />
       
       <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-blue-50">
         {/* Modern Header */}
         <header className="bg-white border-b border-gray-200 shadow-sm">
-          <div className="container mx-auto px-4 py-4">
+          <div className="container mx-auto px-4 py-6">
             <div className="max-w-6xl mx-auto">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-6">
                 <Link to="/" className="flex items-center gap-4 hover:opacity-80 transition-opacity">
                   <img 
                     src="https://i.imgur.com/wR2n4Hg.png" 
                     alt="Aumatia Logo" 
-                    className="h-16 md:h-20 lg:h-24 w-auto object-contain" 
+                    className="h-24 md:h-28 lg:h-32 w-auto object-contain" 
                   />
-                  <div className="hidden sm:block">
-                    <h1 className="text-xl md:text-2xl font-bold text-aumatia-dark">Aumatia</h1>
-                    <p className="text-sm md:text-base text-aumatia-blue font-medium">Automatiza sin miedo, crece sin límites</p>
-                  </div>
                 </Link>
                 <SocialLinks iconSize={20} className="gap-4" />
               </div>
               
-              <Link to="/" className="text-aumatia-blue hover:text-aumatia-dark mb-4 inline-flex items-center group transition-colors">
+              <Link to="/" className="text-aumatia-blue hover:text-aumatia-dark mb-6 inline-flex items-center group transition-colors">
                 <ArrowLeft className="mr-2 w-4 h-4 group-hover:-translate-x-1 transition-transform" />
                 Volver al inicio
               </Link>
               
-              <div className="text-center md:text-left">
-                <h2 className="text-3xl md:text-4xl font-bold text-aumatia-dark mb-2">Recursos de Automatización</h2>
-                <p className="text-lg md:text-xl text-gray-600">
-                  Workflows y tutoriales para optimizar tus procesos
+              {/* Hero Section for Resources */}
+              <div className="text-center py-12 md:py-16 bg-gradient-to-r from-aumatia-blue/10 to-aumatia-dark/10 rounded-2xl mb-8">
+                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-aumatia-dark mb-4">
+                  🚀 Recursos de Automatización
+                </h1>
+                <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+                  Descubre workflows listos para usar, tutoriales paso a paso y herramientas que transformarán tu negocio. 
+                  <span className="block mt-2 font-semibold text-aumatia-blue">
+                    Completamente gratis y diseñados para impulsar tu productividad.
+                  </span>
                 </p>
               </div>
             </div>
@@ -182,9 +185,9 @@ const Recursos = () => {
             {/* Workflows Section */}
             {activeFilter !== 'tutoriales' && <section className="animate-fade-in-up">
                 <div className="text-center mb-8 md:mb-12">
-                  <h3 className="text-2xl md:text-3xl font-bold text-aumatia-dark mb-4">
+                  <h2 className="text-2xl md:text-3xl font-bold text-aumatia-dark mb-4">
                     🚀 Workflows de Automatización
-                  </h3>
+                  </h2>
                   <p className="text-gray-600 text-base md:text-lg">
                     Descarga flujos completos y optimizados para tu negocio
                   </p>
@@ -198,7 +201,7 @@ const Recursos = () => {
                   }} />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                           <div className="absolute bottom-4 left-4 right-4">
-                            <h4 className="text-white font-bold text-lg md:text-xl mb-1 line-clamp-2">{flujo.nombre}</h4>
+                            <h3 className="text-white font-bold text-lg md:text-xl mb-1 line-clamp-2">{flujo.nombre}</h3>
                           </div>
                         </div>
                         
@@ -210,7 +213,7 @@ const Recursos = () => {
                           <PlatformChips platforms={flujo.plataformas || []} className="mb-4" />
 
                           <Link to={`/recursos/detalle?id=${flujo.id}`} className="block">
-                            <Button className="w-full bg-aumatia-blue hover:bg-aumatia-dark hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group">
+                            <Button className="w-full bg-[#4A90E2] hover:bg-[#357ABD] hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group">
                               <Play className="mr-2 w-4 h-4" />
                               Ver Flujo
                               <ExternalLink className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -227,9 +230,9 @@ const Recursos = () => {
             {/* Tutorials Section */}
             {activeFilter !== 'flujos' && <section className="animate-fade-in-up">
                 <div className="text-center mb-8 md:mb-12">
-                  <h3 className="text-2xl md:text-3xl font-bold text-aumatia-dark mb-4">
+                  <h2 className="text-2xl md:text-3xl font-bold text-aumatia-dark mb-4">
                     🎥 Tutoriales Paso a Paso
-                  </h3>
+                  </h2>
                   <p className="text-gray-600 text-base md:text-lg">
                     Aprende con videos detallados y fáciles de seguir
                   </p>
@@ -243,7 +246,7 @@ const Recursos = () => {
                   }} />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                           <div className="absolute bottom-4 left-4 right-4">
-                            <h4 className="text-white font-bold text-lg md:text-xl mb-1 line-clamp-2">{tutorial.titulo}</h4>
+                            <h3 className="text-white font-bold text-lg md:text-xl mb-1 line-clamp-2">{tutorial.titulo}</h3>
                           </div>
                           <div className="absolute top-4 right-4">
                             <div className="bg-red-600 text-white px-2 py-1 rounded text-sm font-medium">
@@ -260,7 +263,7 @@ const Recursos = () => {
                           <PlatformChips platforms={tutorial.plataformas || []} className="mb-4" />
 
                           <Link to={`/recursos/detalle?id=${tutorial.id}&tipo=tutorial`}>
-                            <Button className="w-full bg-aumatia-blue hover:bg-aumatia-dark hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group">
+                            <Button className="w-full bg-[#4A90E2] hover:bg-[#357ABD] hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group">
                               <Play className="mr-2 w-4 h-4" />
                               Ver Tutorial
                               <ExternalLink className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -298,4 +301,5 @@ const Recursos = () => {
       </div>
     </>;
 };
+
 export default Recursos;
