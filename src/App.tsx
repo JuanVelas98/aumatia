@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Recursos from "./pages/Recursos";
 import RecursoDetalle from "./pages/RecursoDetalle";
 import AdminRecursos from "./pages/AdminRecursos";
+import AdminMetrica from "./pages/AdminMetrica";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +24,7 @@ const App = () => (
           <Route path="/recursos" element={<Recursos />} />
           <Route path="/recursos/detalle" element={<RecursoDetalle />} />
           <Route path="/admin_recursos" element={<AdminRecursos />} />
+          <Route path="/admin_metrica" element={<AdminMetrica />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

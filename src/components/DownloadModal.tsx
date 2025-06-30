@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useEventTracking } from "@/hooks/useEventTracking";
 import { Download, DollarSign, FileText, Loader2 } from "lucide-react";
 
 interface DownloadModalProps {
@@ -37,6 +37,7 @@ const countryCodes: CountryCode[] = [
 export const DownloadModal = ({ isOpen, onClose, flujo }: DownloadModalProps) => {
   const [step, setStep] = useState<'choose' | 'form'>('choose');
   const [loading, setLoading] = useState(false);
+  const { registrarEvento } = useEventTracking();
   const [formData, setFormData] = useState({
     nombre: '',
     correo: '',
@@ -46,6 +47,13 @@ export const DownloadModal = ({ isOpen, onClose, flujo }: DownloadModalProps) =>
   });
 
   const handlePayment = () => {
+    // Registrar evento de click en pago
+    registrarEvento({
+      tipo_evento: 'click',
+      descripcion: `Pago USD $1 - ${flujo.nombre}`,
+      recurso_id: flujo.nombre
+    });
+
     const message = `Hola, quiero comprar el flujo de automatización llamado ${flujo.nombre}`;
     const whatsappUrl = `https://wa.link/dmvgi0?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
@@ -78,13 +86,26 @@ export const DownloadModal = ({ isOpen, onClose, flujo }: DownloadModalProps) =>
         return;
       }
 
+      // Registrar evento de formulario enviado
+      registrarEvento({
+        tipo_evento: 'formulario_enviado',
+        descripcion: `Formulario completado - ${flujo.nombre}`,
+        recurso_id: flujo.nombre
+      });
+
       toast({
         title: "¡Éxito!",
         description: "Información registrada correctamente. Iniciando descarga...",
       });
 
-      // Redirigir al enlace de descarga
+      // Registrar evento de descarga
       setTimeout(() => {
+        registrarEvento({
+          tipo_evento: 'descarga',
+          descripcion: `Descarga flujo - ${flujo.nombre}`,
+          recurso_id: flujo.nombre
+        });
+
         window.open(flujo.link_descarga, '_blank');
         onClose();
         setStep('choose');

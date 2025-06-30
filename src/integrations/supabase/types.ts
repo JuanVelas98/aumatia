@@ -42,6 +42,45 @@ export type Database = {
         }
         Relationships: []
       }
+      eventos_usuarios: {
+        Row: {
+          creado_en: string | null
+          descripcion: string | null
+          id: string
+          pagina: string
+          paso_numero: number | null
+          recurso_id: string | null
+          referrer: string | null
+          tiempo_segundos: number | null
+          tipo_evento: string
+          user_agent: string | null
+        }
+        Insert: {
+          creado_en?: string | null
+          descripcion?: string | null
+          id?: string
+          pagina: string
+          paso_numero?: number | null
+          recurso_id?: string | null
+          referrer?: string | null
+          tiempo_segundos?: number | null
+          tipo_evento: string
+          user_agent?: string | null
+        }
+        Update: {
+          creado_en?: string | null
+          descripcion?: string | null
+          id?: string
+          pagina?: string
+          paso_numero?: number | null
+          recurso_id?: string | null
+          referrer?: string | null
+          tiempo_segundos?: number | null
+          tipo_evento?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       flujos: {
         Row: {
           actualizado_en: string | null

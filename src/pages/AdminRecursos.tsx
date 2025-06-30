@@ -1,797 +1,827 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { supabase } from "@/integrations/supabase/client";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
 import { PlatformEditor } from "@/components/PlatformEditor";
-import { useToast } from "@/hooks/use-toast";
-import { Trash2, Edit, Plus, Sun, Moon } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
+import { 
+  Plus, 
+  Edit, 
+  Trash2, 
+  Eye,
+  FileText,
+  Video,
+  ExternalLink,
+  BarChart3
+} from "lucide-react";
+import { Link } from "react-router-dom";
 
 interface Platform {
   nombre: string;
   link: string;
 }
 
+interface Paso {
+  descripcion: string;
+  codigo: string;
+  videoUrl: string;
+}
+
 interface Flujo {
   id: string;
   nombre: string;
-  descripcion: string;
-  imagen_url: string;
-  link_descarga: string;
+  descripcion: string | null;
+  imagen_url: string | null;
+  link_descarga: string | null;
+  pasos: Paso[];
   plataformas: Platform[];
-  pasos: string[];
+  creado_en: string | null;
 }
 
 interface Tutorial {
   id: string;
   titulo: string;
-  descripcion: string;
-  imagen_url: string;
-  video_url: string;
+  descripcion: string | null;
+  imagen_url: string | null;
+  video_url: string | null;
   plataformas: Platform[];
+  creado_en: string | null;
 }
-
-// Helper function for type conversion
-const parseJsonArray = (jsonData: any): any[] => {
-  if (!jsonData) return [];
-  if (Array.isArray(jsonData)) return jsonData;
-  if (typeof jsonData === 'string') {
-    try {
-      return JSON.parse(jsonData);
-    } catch {
-      return [];
-    }
-  }
-  return [];
-};
 
 const AdminRecursos = () => {
   const [flujos, setFlujos] = useState<Flujo[]>([]);
   const [tutoriales, setTutoriales] = useState<Tutorial[]>([]);
-  const [nuevoFlujo, setNuevoFlujo] = useState<Flujo>({
-    id: '',
+  const [loading, setLoading] = useState(true);
+  const [showCreateFlujo, setShowCreateFlujo] = useState(false);
+  const [showCreateTutorial, setShowCreateTutorial] = useState(false);
+  const [editingFlujo, setEditingFlujo] = useState<Flujo | null>(null);
+  const [editingTutorial, setEditingTutorial] = useState<Tutorial | null>(null);
+
+  const [flujoForm, setFlujoForm] = useState({
     nombre: '',
     descripcion: '',
     imagen_url: '',
     link_descarga: '',
-    plataformas: [],
-    pasos: []
+    pasos: [] as Paso[],
+    plataformas: [] as Platform[]
   });
-  const [nuevoTutorial, setNuevoTutorial] = useState<Tutorial>({
-    id: '',
+
+  const [tutorialForm, setTutorialForm] = useState({
     titulo: '',
     descripcion: '',
     imagen_url: '',
     video_url: '',
-    plataformas: []
+    plataformas: [] as Platform[]
   });
-  const [showFlujoForm, setShowFlujoForm] = useState(false);
-  const [showTutorialForm, setShowTutorialForm] = useState(false);
-  const [editingFlujo, setEditingFlujo] = useState<Flujo | null>(null);
-  const [editingTutorial, setEditingTutorial] = useState<Tutorial | null>(null);
-  const [plataformas, setPlataformas] = useState<Platform[]>([]);
-  const { toast } = useToast();
-  const [darkMode, setDarkMode] = useState(false);
-
-  const fetchFlujos = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('flujos')
-        .select('*')
-        .order('creado_en', { ascending: false });
-      if (error) {
-        console.error('Error fetching flujos:', error);
-      } else {
-        const convertedFlujos = (data || []).map(flujo => ({
-          ...flujo,
-          plataformas: parseJsonArray(flujo.plataformas) as Platform[],
-          pasos: parseJsonArray(flujo.pasos) as string[]
-        }));
-        setFlujos(convertedFlujos);
-      }
-    } catch (error) {
-      console.error('Error fetching flujos:', error);
-    }
-  };
-
-  const fetchTutoriales = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('tutoriales')
-        .select('*')
-        .order('creado_en', { ascending: false });
-      if (error) {
-        console.error('Error fetching tutoriales:', error);
-      } else {
-        const convertedTutoriales = (data || []).map(tutorial => ({
-          ...tutorial,
-          plataformas: parseJsonArray(tutorial.plataformas) as Platform[]
-        }));
-        setTutoriales(convertedTutoriales);
-      }
-    } catch (error) {
-      console.error('Error fetching tutoriales:', error);
-    }
-  };
 
   useEffect(() => {
-    fetchFlujos();
-    fetchTutoriales();
+    fetchRecursos();
   }, []);
 
-  const handleCreateFlujo = async () => {
+  const fetchRecursos = async () => {
     try {
-      const { data, error } = await supabase
+      setLoading(true);
+      
+      const [flujosResponse, tutorialesResponse] = await Promise.all([
+        supabase.from('flujos').select('*').order('creado_en', { ascending: false }),
+        supabase.from('tutoriales').select('*').order('creado_en', { ascending: false })
+      ]);
+
+      if (flujosResponse.error) {
+        console.error('Error fetching flujos:', flujosResponse.error);
+      } else {
+        const processedFlujos = flujosResponse.data.map(flujo => ({
+          ...flujo,
+          pasos: Array.isArray(flujo.pasos) ? flujo.pasos : (flujo.pasos ? JSON.parse(flujo.pasos) : []),
+          plataformas: Array.isArray(flujo.plataformas) ? flujo.plataformas : (flujo.plataformas ? JSON.parse(flujo.plataformas) : [])
+        }));
+        setFlujos(processedFlujos);
+      }
+
+      if (tutorialesResponse.error) {
+        console.error('Error fetching tutoriales:', tutorialesResponse.error);
+      } else {
+        const processedTutoriales = tutorialesResponse.data.map(tutorial => ({
+          ...tutorial,
+          plataformas: Array.isArray(tutorial.plataformas) ? tutorial.plataformas : (tutorial.plataformas ? JSON.parse(tutorial.plataformas) : [])
+        }));
+        setTutoriales(processedTutoriales);
+      }
+    } catch (error) {
+      console.error('Error general:', error);
+      toast({
+        title: "Error",
+        description: "Hubo un problema al cargar los recursos",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetFlujoForm = () => {
+    setFlujoForm({
+      nombre: '',
+      descripcion: '',
+      imagen_url: '',
+      link_descarga: '',
+      pasos: [],
+      plataformas: []
+    });
+    setEditingFlujo(null);
+  };
+
+  const resetTutorialForm = () => {
+    setTutorialForm({
+      titulo: '',
+      descripcion: '',
+      imagen_url: '',
+      video_url: '',
+      plataformas: []
+    });
+    setEditingTutorial(null);
+  };
+
+  const handleCreateFlujo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!flujoForm.nombre.trim()) {
+      toast({
+        title: "Error",
+        description: "El nombre del flujo es requerido",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const flujoData = {
+        nombre: flujoForm.nombre.trim(),
+        descripcion: flujoForm.descripcion.trim() || null,
+        imagen_url: flujoForm.imagen_url.trim() || null,
+        link_descarga: flujoForm.link_descarga.trim() || null,
+        pasos: flujoForm.pasos,
+        plataformas: flujoForm.plataformas
+      };
+
+      const { error } = await supabase
         .from('flujos')
-        .insert([{
-          ...nuevoFlujo,
-          plataformas: JSON.stringify(plataformas),
-          pasos: JSON.stringify(nuevoFlujo.pasos)
-        }]);
+        .insert(flujoData);
 
       if (error) {
-        console.error('Error creating flujo:', error);
-        toast({
-          title: "Error creando el flujo",
-          description: "Hubo un problema al guardar el flujo. Intenta nuevamente.",
-          variant: "destructive",
-        });
-      } else {
-        console.log('Flujo created successfully:', data);
-        toast({
-          title: "Flujo creado exitosamente!",
-          description: "El flujo se ha guardado correctamente.",
-        });
-        fetchFlujos();
-        setShowFlujoForm(false);
-        setNuevoFlujo({ id: '', nombre: '', descripcion: '', imagen_url: '', link_descarga: '', plataformas: [], pasos: [] });
-        setPlataformas([]);
+        throw error;
       }
+
+      toast({
+        title: "Éxito",
+        description: "Flujo creado correctamente"
+      });
+
+      setShowCreateFlujo(false);
+      resetFlujoForm();
+      fetchRecursos();
     } catch (error) {
       console.error('Error creating flujo:', error);
       toast({
-        title: "Error inesperado",
-        description: "Ocurrió un error inesperado. Contacta al administrador.",
-        variant: "destructive",
+        title: "Error",
+        description: "No se pudo crear el flujo",
+        variant: "destructive"
       });
     }
   };
 
-  const handleCreateTutorial = async () => {
+  const handleCreateTutorial = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!tutorialForm.titulo.trim()) {
+      toast({
+        title: "Error",
+        description: "El título del tutorial es requerido",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!tutorialForm.video_url.trim()) {
+      toast({
+        title: "Error",
+        description: "La URL del video es requerida",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
-      // Validate required fields
-      if (!nuevoTutorial.titulo.trim()) {
-        toast({
-          title: "Campo requerido",
-          description: "El título del tutorial es obligatorio.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (!nuevoTutorial.video_url.trim()) {
-        toast({
-          title: "Campo requerido",
-          description: "La URL del video es obligatoria.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Prepare tutorial data without id field for new tutorials
       const tutorialData = {
-        titulo: nuevoTutorial.titulo.trim(),
-        descripcion: nuevoTutorial.descripcion?.trim() || '',
-        imagen_url: nuevoTutorial.imagen_url?.trim() || '',
-        video_url: nuevoTutorial.video_url.trim(),
-        plataformas: JSON.stringify(plataformas)
+        titulo: tutorialForm.titulo.trim(),
+        descripcion: tutorialForm.descripcion.trim() || null,
+        imagen_url: tutorialForm.imagen_url.trim() || null,
+        video_url: tutorialForm.video_url.trim(),
+        plataformas: tutorialForm.plataformas
       };
 
-      console.log('Creating tutorial with data:', tutorialData);
-
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('tutoriales')
-        .insert([tutorialData]);
+        .insert(tutorialData);
 
       if (error) {
-        console.error('Error creating tutorial:', error);
-        toast({
-          title: "Error creando el tutorial",
-          description: `Hubo un problema al guardar el tutorial: ${error.message}`,
-          variant: "destructive",
-        });
-      } else {
-        console.log('Tutorial created successfully:', data);
-        toast({
-          title: "Tutorial creado exitosamente!",
-          description: "El tutorial se ha guardado correctamente.",
-        });
-        fetchTutoriales();
-        setShowTutorialForm(false);
-        setNuevoTutorial({ id: '', titulo: '', descripcion: '', imagen_url: '', video_url: '', plataformas: [] });
-        setPlataformas([]);
+        throw error;
       }
+
+      toast({
+        title: "Éxito",
+        description: "Tutorial creado correctamente"
+      });
+
+      setShowCreateTutorial(false);
+      resetTutorialForm();
+      fetchRecursos();
     } catch (error) {
       console.error('Error creating tutorial:', error);
       toast({
-        title: "Error inesperado",
-        description: "Ocurrió un error inesperado. Contacta al administrador.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleUpdateFlujo = async () => {
-    if (!editingFlujo) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('flujos')
-        .update({
-          ...nuevoFlujo,
-          plataformas: JSON.stringify(plataformas),
-          pasos: JSON.stringify(nuevoFlujo.pasos)
-        })
-        .eq('id', editingFlujo.id);
-
-      if (error) {
-        console.error('Error updating flujo:', error);
-        toast({
-          title: "Error actualizando el flujo",
-          description: "Hubo un problema al actualizar el flujo. Intenta nuevamente.",
-          variant: "destructive",
-        });
-      } else {
-        console.log('Flujo updated successfully:', data);
-        toast({
-          title: "Flujo actualizado exitosamente!",
-          description: "El flujo se ha actualizado correctamente.",
-        });
-        fetchFlujos();
-        setEditingFlujo(null);
-        setNuevoFlujo({ id: '', nombre: '', descripcion: '', imagen_url: '', link_descarga: '', plataformas: [], pasos: [] });
-        setPlataformas([]);
-      }
-    } catch (error) {
-      console.error('Error updating flujo:', error);
-      toast({
-        title: "Error inesperado",
-        description: "Ocurrió un error inesperado. Contacta al administrador.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleDeleteFlujo = async (id: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('flujos')
-        .delete()
-        .eq('id', id);
-
-      if (error) {
-        console.error('Error deleting flujo:', error);
-        toast({
-          title: "Error eliminando el flujo",
-          description: "Hubo un problema al eliminar el flujo. Intenta nuevamente.",
-          variant: "destructive",
-        });
-      } else {
-        console.log('Flujo deleted successfully:', data);
-        toast({
-          title: "Flujo eliminado exitosamente!",
-          description: "El flujo se ha eliminado correctamente.",
-        });
-        fetchFlujos();
-      }
-    } catch (error) {
-      console.error('Error deleting flujo:', error);
-      toast({
-        title: "Error inesperado",
-        description: "Ocurrió un error inesperado. Contacta al administrador.",
-        variant: "destructive",
+        title: "Error",
+        description: "No se pudo crear el tutorial",
+        variant: "destructive"
       });
     }
   };
 
   const handleEditFlujo = (flujo: Flujo) => {
-    setEditingFlujo(flujo);
-    setNuevoFlujo({
-      ...flujo,
-      pasos: flujo.pasos || []
+    setFlujoForm({
+      nombre: flujo.nombre,
+      descripcion: flujo.descripcion || '',
+      imagen_url: flujo.imagen_url || '',
+      link_descarga: flujo.link_descarga || '',
+      pasos: flujo.pasos || [],
+      plataformas: flujo.plataformas || []
     });
-    setPlataformas(flujo.plataformas);
-    setShowFlujoForm(true);
+    setEditingFlujo(flujo);
+    setShowCreateFlujo(true);
   };
 
-  const handleUpdateTutorial = async () => {
-    if (!editingTutorial) return;
+  const handleEditTutorial = (tutorial: Tutorial) => {
+    setTutorialForm({
+      titulo: tutorial.titulo,
+      descripcion: tutorial.descripcion || '',
+      imagen_url: tutorial.imagen_url || '',
+      video_url: tutorial.video_url || '',
+      plataformas: tutorial.plataformas || []
+    });
+    setEditingTutorial(tutorial);
+    setShowCreateTutorial(true);
+  };
+
+  const handleUpdateFlujo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!editingFlujo || !flujoForm.nombre.trim()) {
+      return;
+    }
 
     try {
-      if (!nuevoTutorial.titulo.trim()) {
-        toast({
-          title: "Campo requerido",
-          description: "El título del tutorial es obligatorio.",
-          variant: "destructive",
-        });
-        return;
+      const { error } = await supabase
+        .from('flujos')
+        .update({
+          nombre: flujoForm.nombre.trim(),
+          descripcion: flujoForm.descripcion.trim() || null,
+          imagen_url: flujoForm.imagen_url.trim() || null,
+          link_descarga: flujoForm.link_descarga.trim() || null,
+          pasos: flujoForm.pasos,
+          plataformas: flujoForm.plataformas
+        })
+        .eq('id', editingFlujo.id);
+
+      if (error) {
+        throw error;
       }
 
-      if (!nuevoTutorial.video_url.trim()) {
-        toast({
-          title: "Campo requerido",
-          description: "La URL del video es obligatoria.",
-          variant: "destructive",
-        });
-        return;
-      }
+      toast({
+        title: "Éxito",
+        description: "Flujo actualizado correctamente"
+      });
 
-      const tutorialData = {
-        titulo: nuevoTutorial.titulo.trim(),
-        descripcion: nuevoTutorial.descripcion?.trim() || '',
-        imagen_url: nuevoTutorial.imagen_url?.trim() || '',
-        video_url: nuevoTutorial.video_url.trim(),
-        plataformas: JSON.stringify(plataformas)
-      };
+      setShowCreateFlujo(false);
+      resetFlujoForm();
+      fetchRecursos();
+    } catch (error) {
+      console.error('Error updating flujo:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el flujo",
+        variant: "destructive"
+      });
+    }
+  };
 
-      const { data, error } = await supabase
+  const handleUpdateTutorial = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!editingTutorial || !tutorialForm.titulo.trim()) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
         .from('tutoriales')
-        .update(tutorialData)
+        .update({
+          titulo: tutorialForm.titulo.trim(),
+          descripcion: tutorialForm.descripcion.trim() || null,
+          imagen_url: tutorialForm.imagen_url.trim() || null,
+          video_url: tutorialForm.video_url.trim() || null,
+          plataformas: tutorialForm.plataformas
+        })
         .eq('id', editingTutorial.id);
 
       if (error) {
-        console.error('Error updating tutorial:', error);
-        toast({
-          title: "Error actualizando el tutorial",
-          description: "Hubo un problema al actualizar el tutorial. Intenta nuevamente.",
-          variant: "destructive",
-        });
-      } else {
-        console.log('Tutorial updated successfully:', data);
-        toast({
-          title: "Tutorial actualizado exitosamente!",
-          description: "El tutorial se ha actualizado correctamente.",
-        });
-        fetchTutoriales();
-        setEditingTutorial(null);
-        setNuevoTutorial({ id: '', titulo: '', descripcion: '', imagen_url: '', video_url: '', plataformas: [] });
-        setPlataformas([]);
+        throw error;
       }
+
+      toast({
+        title: "Éxito",
+        description: "Tutorial actualizado correctamente"
+      });
+
+      setShowCreateTutorial(false);
+      resetTutorialForm();
+      fetchRecursos();
     } catch (error) {
       console.error('Error updating tutorial:', error);
       toast({
-        title: "Error inesperado",
-        description: "Ocurrió un error inesperado. Contacta al administrador.",
-        variant: "destructive",
+        title: "Error",
+        description: "No se pudo actualizar el tutorial",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteFlujo = async (id: string) => {
+    if (!confirm('¿Estás seguro de que deseas eliminar este flujo?')) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('flujos')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Éxito",
+        description: "Flujo eliminado correctamente"
+      });
+
+      fetchRecursos();
+    } catch (error) {
+      console.error('Error deleting flujo:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo eliminar el flujo",
+        variant: "destructive"
       });
     }
   };
 
   const handleDeleteTutorial = async (id: string) => {
+    if (!confirm('¿Estás seguro de que deseas eliminar este tutorial?')) {
+      return;
+    }
+
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('tutoriales')
         .delete()
         .eq('id', id);
 
       if (error) {
-        console.error('Error deleting tutorial:', error);
-        toast({
-          title: "Error eliminando el tutorial",
-          description: "Hubo un problema al eliminar el tutorial. Intenta nuevamente.",
-          variant: "destructive",
-        });
-      } else {
-        console.log('Tutorial deleted successfully:', data);
-        toast({
-          title: "Tutorial eliminado exitosamente!",
-          description: "El tutorial se ha eliminado correctamente.",
-        });
-        fetchTutoriales();
+        throw error;
       }
+
+      toast({
+        title: "Éxito",
+        description: "Tutorial eliminado correctamente"
+      });
+
+      fetchRecursos();
     } catch (error) {
       console.error('Error deleting tutorial:', error);
       toast({
-        title: "Error inesperado",
-        description: "Ocurrió un error inesperado. Contacta al administrador.",
-        variant: "destructive",
+        title: "Error",
+        description: "No se pudo eliminar el tutorial",
+        variant: "destructive"
       });
     }
   };
 
-  const handleEditTutorial = (tutorial: Tutorial) => {
-    setEditingTutorial(tutorial);
-    setNuevoTutorial(tutorial);
-    setPlataformas(tutorial.plataformas);
-    setShowTutorialForm(true);
-  };
-
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-    localStorage.setItem('adminDarkMode', (!darkMode).toString());
-  };
-
-  useEffect(() => {
-    const savedDarkMode = localStorage.getItem('adminDarkMode');
-    if (savedDarkMode) {
-      setDarkMode(savedDarkMode === 'true');
-    }
-  }, []);
-
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${
-      darkMode 
-        ? 'bg-gray-900 text-white' 
-        : 'bg-gradient-to-br from-white via-gray-50 to-blue-50'
-    }`}>
-      {/* Admin Header with Dark Mode Toggle */}
-      <header className={`border-b shadow-sm ${
-        darkMode 
-          ? 'bg-gray-800 border-gray-700' 
-          : 'bg-white border-gray-200'
-      }`}>
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <img 
-                src="https://i.imgur.com/wR2n4Hg.png" 
-                alt="Aumatia Logo" 
-                className="h-12 md:h-16 w-auto object-contain" 
-              />
-              <div>
-                <h1 className={`text-xl md:text-2xl font-bold ${
-                  darkMode ? 'text-white' : 'text-aumatia-dark'
-                }`}>
-                  Panel de Administración
-                </h1>
-                <p className={`text-sm md:text-base ${
-                  darkMode ? 'text-gray-300' : 'text-aumatia-blue'
-                }`}>
-                  Gestión de recursos
-                </p>
-              </div>
-            </div>
-            
-            <Button
-              onClick={toggleDarkMode}
-              variant="outline"
-              size="sm"
-              className={`${
-                darkMode 
-                  ? 'bg-gray-700 border-gray-600 text-yellow-400 hover:bg-gray-600' 
-                  : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              {darkMode ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-              <span className="ml-2 hidden sm:inline">
-                {darkMode ? 'Modo Claro' : 'Modo Oscuro'}
-              </span>
-            </Button>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Panel de Administración</h1>
+            <p className="text-gray-600 mt-2">Gestiona flujos y tutoriales de Aumatia</p>
+          </div>
+          
+          {/* Navigation buttons */}
+          <div className="flex gap-3">
+            <Link to="/admin_metrica">
+              <Button className="bg-aumatia-blue hover:bg-aumatia-dark text-white">
+                <BarChart3 className="mr-2 w-4 h-4" />
+                Ver Métricas
+              </Button>
+            </Link>
+            <Link to="/recursos">
+              <Button variant="outline">
+                <Eye className="mr-2 w-4 h-4" />
+                Ver Sitio Público
+              </Button>
+            </Link>
           </div>
         </div>
-      </header>
 
-      <main className="container mx-auto px-4 py-8">
+        {/* Content */}
         <Tabs defaultValue="flujos" className="space-y-6">
-          <TabsList className={`grid w-full grid-cols-2 ${
-            darkMode 
-              ? 'bg-gray-800 text-gray-300' 
-              : 'bg-white'
-          }`}>
-            <TabsTrigger 
-              value="flujos"
-              className={darkMode ? 'data-[state=active]:bg-gray-700 data-[state=active]:text-white' : ''}
-            >
-              Gestión de Flujos
+          <TabsList className="grid w-full grid-cols-2 max-w-md">
+            <TabsTrigger value="flujos" className="flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              Flujos ({flujos.length})
             </TabsTrigger>
-            <TabsTrigger 
-              value="tutoriales"
-              className={darkMode ? 'data-[state=active]:bg-gray-700 data-[state=active]:text-white' : ''}
-            >
-              Gestión de Tutoriales
+            <TabsTrigger value="tutoriales" className="flex items-center gap-2">
+              <Video className="w-4 h-4" />
+              Tutoriales ({tutoriales.length})
             </TabsTrigger>
           </TabsList>
 
-          {/* Flujos Tab */}
+          
           <TabsContent value="flujos" className="space-y-6">
-            <Card className={`${
-              darkMode 
-                ? 'bg-gray-800 border-gray-700 text-white' 
-                : 'bg-white border-gray-200'
-            }`}>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>Crear Nuevo Flujo</span>
-                  <Button
-                    onClick={() => setShowFlujoForm(!showFlujoForm)}
-                    className="bg-aumatia-blue hover:bg-aumatia-dark"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Nuevo Flujo
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-semibold text-gray-900">Gestión de Flujos</h2>
+              <Dialog open={showCreateFlujo} onOpenChange={setShowCreateFlujo}>
+                <DialogTrigger asChild>
+                  <Button onClick={() => resetFlujoForm()} className="bg-green-600 hover:bg-green-700">
+                    <Plus className="mr-2 w-4 h-4" />
+                    Crear Flujo
                   </Button>
-                </CardTitle>
-              </CardHeader>
-              
-              {showFlujoForm && (
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="flujo-nombre">Nombre del Flujo</Label>
-                    <Input
-                      id="flujo-nombre"
-                      value={nuevoFlujo.nombre}
-                      onChange={(e) => setNuevoFlujo({...nuevoFlujo, nombre: e.target.value})}
-                      className={darkMode ? 'bg-gray-700 border-gray-600 text-white' : ''}
-                    />
-                  </div>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>
+                      {editingFlujo ? 'Editar Flujo' : 'Crear Nuevo Flujo'}
+                    </DialogTitle>
+                    <DialogDescription>
+                      {editingFlujo ? 'Modifica los datos del flujo' : 'Completa la información para crear un nuevo flujo'}
+                    </DialogDescription>
+                  </DialogHeader>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="flujo-descripcion">Descripción</Label>
-                    <Textarea
-                      id="flujo-descripcion"
-                      value={nuevoFlujo.descripcion}
-                      onChange={(e) => setNuevoFlujo({...nuevoFlujo, descripcion: e.target.value})}
-                      className={darkMode ? 'bg-gray-700 border-gray-600 text-white' : ''}
-                    />
-                  </div>
+                  <form onSubmit={editingFlujo ? handleUpdateFlujo : handleCreateFlujo} className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="nombre">Nombre del Flujo *</Label>
+                        <Input
+                          id="nombre"
+                          value={flujoForm.nombre}
+                          onChange={(e) => setFlujoForm({...flujoForm, nombre: e.target.value})}
+                          placeholder="Nombre descriptivo del flujo"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="imagen_url">URL de Imagen</Label>
+                        <Input
+                          id="imagen_url"
+                          value={flujoForm.imagen_url}
+                          onChange={(e) => setFlujoForm({...flujoForm, imagen_url: e.target.value})}
+                          placeholder="https://ejemplo.com/imagen.jpg"
+                        />
+                      </div>
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="flujo-imagen_url">URL de la Imagen</Label>
-                    <Input
-                      id="flujo-imagen_url"
-                      value={nuevoFlujo.imagen_url}
-                      onChange={(e) => setNuevoFlujo({...nuevoFlujo, imagen_url: e.target.value})}
-                      className={darkMode ? 'bg-gray-700 border-gray-600 text-white' : ''}
-                    />
-                  </div>
+                    <div>
+                      <Label htmlFor="descripcion">Descripción</Label>
+                      <Textarea
+                        id="descripcion"
+                        value={flujoForm.descripcion}
+                        onChange={(e) => setFlujoForm({...flujoForm, descripcion: e.target.value})}
+                        placeholder="Describe qué hace este flujo..."
+                        rows={3}
+                      />
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="flujo-link_descarga">Link de Descarga</Label>
-                    <Input
-                      id="flujo-link_descarga"
-                      value={nuevoFlujo.link_descarga}
-                      onChange={(e) => setNuevoFlujo({...nuevoFlujo, link_descarga: e.target.value})}
-                      className={darkMode ? 'bg-gray-700 border-gray-600 text-white' : ''}
-                    />
-                  </div>
+                    <div>
+                      <Label htmlFor="link_descarga">Link de Descarga</Label>
+                      <Input
+                        id="link_descarga"
+                        value={flujoForm.link_descarga}
+                        onChange={(e) => setFlujoForm({...flujoForm, link_descarga: e.target.value})}
+                        placeholder="https://drive.google.com/..."
+                      />
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label>Plataformas</Label>
                     <PlatformEditor
-                      platforms={plataformas}
-                      onChange={setPlataformas}
+                      platforms={flujoForm.plataformas}
+                      onChange={(platforms) => setFlujoForm({...flujoForm, plataformas: platforms})}
+                      title="Plataformas del Flujo"
                     />
-                  </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="flujo-pasos">Pasos (separados por coma)</Label>
-                    <Textarea
-                      id="flujo-pasos"
-                      value={nuevoFlujo.pasos ? nuevoFlujo.pasos.join(', ') : ''}
-                      onChange={(e) => setNuevoFlujo({ ...nuevoFlujo, pasos: e.target.value.split(',').map(s => s.trim()) })}
-                      className={darkMode ? 'bg-gray-700 border-gray-600 text-white' : ''}
-                    />
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button 
-                      onClick={() => editingFlujo ? handleUpdateFlujo() : handleCreateFlujo()}
-                      className="bg-aumatia-blue hover:bg-aumatia-dark"
-                    >
-                      {editingFlujo ? 'Actualizar' : 'Crear'} Flujo
-                    </Button>
-                    {editingFlujo && (
+                    <div className="flex justify-end gap-3">
                       <Button 
+                        type="button" 
+                        variant="outline" 
                         onClick={() => {
-                          setEditingFlujo(null);
-                          setNuevoFlujo({ id: '', nombre: '', descripcion: '', imagen_url: '', link_descarga: '', plataformas: [], pasos: [] });
-                          setPlataformas([]);
+                          setShowCreateFlujo(false);
+                          resetFlujoForm();
                         }}
-                        variant="outline"
-                        className={darkMode ? 'bg-gray-700 border-gray-600 text-white hover:bg-gray-600' : ''}
                       >
                         Cancelar
                       </Button>
-                    )}
-                  </div>
-                </CardContent>
-              )}
-            </Card>
-
-            {/* Existing Flujos List */}
-            <div className="grid gap-4">
-              {flujos.map((flujo) => (
-                <Card key={flujo.id} className={`${
-                  darkMode 
-                    ? 'bg-gray-800 border-gray-700 text-white' 
-                    : 'bg-white border-gray-200'
-                }`}>
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      <span>{flujo.nombre}</span>
-                      <div className="flex gap-2">
-                        <Button
-                          onClick={() => handleEditFlujo(flujo)}
-                          size="sm"
-                          variant="outline"
-                          className={darkMode ? 'bg-gray-700 border-gray-600 text-white hover:bg-gray-600' : ''}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          onClick={() => handleDeleteFlujo(flujo.id)}
-                          size="sm"
-                          variant="destructive"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className={`${darkMode ? 'text-gray-300' : 'text-gray-600'} mb-4`}>
-                      {flujo.descripcion}
-                    </p>
-                    {flujo.imagen_url && (
-                      <img 
-                        src={flujo.imagen_url} 
-                        alt={flujo.nombre}
-                        className="w-full h-32 object-cover rounded mb-4"
-                      />
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
+                      <Button type="submit" className="bg-green-600 hover:bg-green-700">
+                        {editingFlujo ? 'Actualizar Flujo' : 'Crear Flujo'}
+                      </Button>
+                    </div>
+                  </form>
+                </DialogContent>
+              </Dialog>
             </div>
+
+            {loading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                <p className="mt-2 text-gray-600">Cargando flujos...</p>
+              </div>
+            ) : (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Lista de Flujos</CardTitle>
+                  <CardDescription>
+                    Todos los flujos disponibles en la plataforma
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Nombre</TableHead>
+                        <TableHead>Descripción</TableHead>
+                        <TableHead>Plataformas</TableHead>
+                        <TableHead>Pasos</TableHead>
+                        <TableHead>Creado</TableHead>
+                        <TableHead className="text-right">Acciones</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {flujos.map((flujo) => (
+                        <TableRow key={flujo.id}>
+                          <TableCell className="font-medium">{flujo.nombre}</TableCell>
+                          <TableCell className="max-w-xs truncate">
+                            {flujo.descripcion || 'Sin descripción'}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              {flujo.plataformas?.slice(0, 2).map((platform, index) => (
+                                <Badge key={index} variant="secondary" className="text-xs">
+                                  {platform.nombre}
+                                </Badge>
+                              ))}
+                              {flujo.plataformas?.length > 2 && (
+                                <Badge variant="outline" className="text-xs">
+                                  +{flujo.plataformas.length - 2}
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>{flujo.pasos?.length || 0} pasos</TableCell>
+                          <TableCell>
+                            {flujo.creado_en ? new Date(flujo.creado_en).toLocaleDateString() : 'N/A'}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Link to={`/recursos/detalle?id=${flujo.id}`} target="_blank">
+                                <Button variant="outline" size="sm">
+                                  <ExternalLink className="w-4 h-4" />
+                                </Button>
+                              </Link>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleEditFlujo(flujo)}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleDeleteFlujo(flujo.id)}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
-          {/* Tutoriales Tab */}
           <TabsContent value="tutoriales" className="space-y-6">
-            <Card className={`${
-              darkMode 
-                ? 'bg-gray-800 border-gray-700 text-white' 
-                : 'bg-white border-gray-200'
-            }`}>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>Crear Nuevo Tutorial</span>
-                  <Button
-                    onClick={() => setShowTutorialForm(!showTutorialForm)}
-                    className="bg-aumatia-blue hover:bg-aumatia-dark"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Nuevo Tutorial
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-semibold text-gray-900">Gestión de Tutoriales</h2>
+              <Dialog open={showCreateTutorial} onOpenChange={setShowCreateTutorial}>
+                <DialogTrigger asChild>
+                  <Button onClick={() => resetTutorialForm()} className="bg-green-600 hover:bg-green-700">
+                    <Plus className="mr-2 w-4 h-4" />
+                    Crear Tutorial
                   </Button>
-                </CardTitle>
-              </CardHeader>
-              
-              {showTutorialForm && (
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="tutorial-titulo">Título del Tutorial *</Label>
-                    <Input
-                      id="tutorial-titulo"
-                      value={nuevoTutorial.titulo}
-                      onChange={(e) => setNuevoTutorial({...nuevoTutorial, titulo: e.target.value})}
-                      className={darkMode ? 'bg-gray-700 border-gray-600 text-white' : ''}
-                      required
-                    />
-                  </div>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>
+                      {editingTutorial ? 'Editar Tutorial' : 'Crear Nuevo Tutorial'}
+                    </DialogTitle>
+                    <DialogDescription>
+                      {editingTutorial ? 'Modifica los datos del tutorial' : 'Completa la información para crear un nuevo tutorial'}
+                    </DialogDescription>
+                  </DialogHeader>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="tutorial-descripcion">Descripción</Label>
-                    <Textarea
-                      id="tutorial-descripcion"
-                      value={nuevoTutorial.descripcion}
-                      onChange={(e) => setNuevoTutorial({...nuevoTutorial, descripcion: e.target.value})}
-                      className={darkMode ? 'bg-gray-700 border-gray-600 text-white' : ''}
-                    />
-                  </div>
+                  <form onSubmit={editingTutorial ? handleUpdateTutorial : handleCreateTutorial} className="space-y-4">
+                    <div>
+                      <Label htmlFor="titulo">Título del Tutorial *</Label>
+                      <Input
+                        id="titulo"
+                        value={tutorialForm.titulo}
+                        onChange={(e) => setTutorialForm({...tutorialForm, titulo: e.target.value})}
+                        placeholder="Título descriptivo del tutorial"
+                        required
+                      />
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="tutorial-imagen_url">URL de la Imagen</Label>
-                    <Input
-                      id="tutorial-imagen_url"
-                      value={nuevoTutorial.imagen_url}
-                      onChange={(e) => setNuevoTutorial({...nuevoTutorial, imagen_url: e.target.value})}
-                      className={darkMode ? 'bg-gray-700 border-gray-600 text-white' : ''}
-                    />
-                  </div>
+                    <div>
+                      <Label htmlFor="descripcion">Descripción</Label>
+                      <Textarea
+                        id="descripcion"
+                        value={tutorialForm.descripcion}
+                        onChange={(e) => setTutorialForm({...tutorialForm, descripcion: e.target.value})}
+                        placeholder="Describe de qué trata el tutorial..."
+                        rows={3}
+                      />
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="tutorial-video_url">URL del Video *</Label>
-                    <Input
-                      id="tutorial-video_url"
-                      value={nuevoTutorial.video_url}
-                      onChange={(e) => setNuevoTutorial({...nuevoTutorial, video_url: e.target.value})}
-                      className={darkMode ? 'bg-gray-700 border-gray-600 text-white' : ''}
-                      required
-                    />
-                  </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="video_url">URL del Video *</Label>
+                        <Input
+                          id="video_url"
+                          value={tutorialForm.video_url}
+                          onChange={(e) => setTutorialForm({...tutorialForm, video_url: e.target.value})}
+                          placeholder="https://youtube.com/watch?v=..."
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="imagen_url">URL de Imagen</Label>
+                        <Input
+                          id="imagen_url"
+                          value={tutorialForm.imagen_url}
+                          onChange={(e) => setTutorialForm({...tutorialForm, imagen_url: e.target.value})}
+                          placeholder="https://ejemplo.com/imagen.jpg"
+                        />
+                      </div>
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label>Plataformas</Label>
                     <PlatformEditor
-                      platforms={plataformas}
-                      onChange={setPlataformas}
+                      platforms={tutorialForm.plataformas}
+                      onChange={(platforms) => setTutorialForm({...tutorialForm, plataformas: platforms})}
+                      title="Plataformas del Tutorial"
                     />
-                  </div>
 
-                  <div className="flex gap-2">
-                    <Button 
-                      onClick={() => editingTutorial ? handleUpdateTutorial() : handleCreateTutorial()}
-                      className="bg-aumatia-blue hover:bg-aumatia-dark"
-                    >
-                      {editingTutorial ? 'Actualizar' : 'Crear'} Tutorial
-                    </Button>
-                    {editingTutorial && (
+                    <div className="flex justify-end gap-3">
                       <Button 
+                        type="button" 
+                        variant="outline" 
                         onClick={() => {
-                          setEditingTutorial(null);
-                          setNuevoTutorial({ id: '', titulo: '', descripcion: '', imagen_url: '', video_url: '', plataformas: [] });
-                          setPlataformas([]);
+                          setShowCreateTutorial(false);
+                          resetTutorialForm();
                         }}
-                        variant="outline"
-                        className={darkMode ? 'bg-gray-700 border-gray-600 text-white hover:bg-gray-600' : ''}
                       >
                         Cancelar
                       </Button>
-                    )}
-                  </div>
-                </CardContent>
-              )}
-            </Card>
-
-            {/* Existing Tutoriales List */}
-            <div className="grid gap-4">
-              {tutoriales.map((tutorial) => (
-                <Card key={tutorial.id} className={`${
-                  darkMode 
-                    ? 'bg-gray-800 border-gray-700 text-white' 
-                    : 'bg-white border-gray-200'
-                }`}>
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      <span>{tutorial.titulo}</span>
-                      <div className="flex gap-2">
-                        <Button
-                          onClick={() => handleEditTutorial(tutorial)}
-                          size="sm"
-                          variant="outline"
-                          className={darkMode ? 'bg-gray-700 border-gray-600 text-white hover:bg-gray-600' : ''}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          onClick={() => handleDeleteTutorial(tutorial.id)}
-                          size="sm"
-                          variant="destructive"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className={`${darkMode ? 'text-gray-300' : 'text-gray-600'} mb-4`}>
-                      {tutorial.descripcion}
-                    </p>
-                    {tutorial.imagen_url && (
-                      <img 
-                        src={tutorial.imagen_url} 
-                        alt={tutorial.titulo}
-                        className="w-full h-32 object-cover rounded mb-4"
-                      />
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
+                      <Button type="submit" className="bg-green-600 hover:bg-green-700">
+                        {editingTutorial ? 'Actualizar Tutorial' : 'Crear Tutorial'}
+                      </Button>
+                    </div>
+                  </form>
+                </DialogContent>
+              </Dialog>
             </div>
+
+            {loading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                <p className="mt-2 text-gray-600">Cargando tutoriales...</p>
+              </div>
+            ) : (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Lista de Tutoriales</CardTitle>
+                  <CardDescription>
+                    Todos los tutoriales disponibles en la plataforma
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Título</TableHead>
+                        <TableHead>Descripción</TableHead>
+                        <TableHead>Plataformas</TableHead>
+                        <TableHead>Video</TableHead>
+                        <TableHead>Creado</TableHead>
+                        <TableHead className="text-right">Acciones</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {tutoriales.map((tutorial) => (
+                        <TableRow key={tutorial.id}>
+                          <TableCell className="font-medium">{tutorial.titulo}</TableCell>
+                          <TableCell className="max-w-xs truncate">
+                            {tutorial.descripcion || 'Sin descripción'}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              {tutorial.plataformas?.slice(0, 2).map((platform, index) => (
+                                <Badge key={index} variant="secondary" className="text-xs">
+                                  {platform.nombre}
+                                </Badge>
+                              ))}
+                              {tutorial.plataformas?.length > 2 && (
+                                <Badge variant="outline" className="text-xs">
+                                  +{tutorial.plataformas.length - 2}
+                                </Badge>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {tutorial.video_url ? (
+                              <Badge variant="outline" className="text-xs text-green-600">
+                                ✓ Video
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-xs text-red-600">
+                                ✗ Sin video
+                              </Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {tutorial.creado_en ? new Date(tutorial.creado_en).toLocaleDateString() : 'N/A'}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Link to={`/recursos/detalle?id=${tutorial.id}&tipo=tutorial`} target="_blank">
+                                <Button variant="outline" size="sm">
+                                  <ExternalLink className="w-4 h-4" />
+                                </Button>
+                              </Link>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleEditTutorial(tutorial)}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleDeleteTutorial(tutorial.id)}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
         </Tabs>
-      </main>
+      </div>
     </div>
   );
 };
