@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -97,7 +96,7 @@ const RecursoDetalle = () => {
             ...data,
             plataformas: Array.isArray(data.plataformas) 
               ? data.plataformas as Platform[]
-              : (data.plataformas ? JSON.parse(String(data.plataformas)) : [])
+              : (data.plataformas ? JSON.parse(String(data.plataformas)) as Platform[] : [])
           };
           setRecurso(processedData);
         }
@@ -118,10 +117,10 @@ const RecursoDetalle = () => {
             ...data,
             pasos: Array.isArray(data.pasos) 
               ? data.pasos as Paso[]
-              : (data.pasos ? JSON.parse(String(data.pasos)) : []),
+              : (data.pasos ? JSON.parse(String(data.pasos)) as Paso[] : []),
             plataformas: Array.isArray(data.plataformas) 
               ? data.plataformas as Platform[]
-              : (data.plataformas ? JSON.parse(String(data.plataformas)) : [])
+              : (data.plataformas ? JSON.parse(String(data.plataformas)) as Platform[] : [])
           };
           setRecurso(processedData);
         }
