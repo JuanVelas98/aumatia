@@ -1,29 +1,19 @@
-import { useState, useEffect, useRef } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+
+import { useState, useEffect } from "react";
+import { useSearchParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { PlatformEditor } from "@/components/PlatformEditor";
-import { SocialLinks } from "@/components/SocialLinks";
-import { SEOHelmet } from "@/components/SEOHelmet";
+import { Separator } from "@/components/ui/separator";
+import { PlatformChips } from "@/components/PlatformChips";
+import { DownloadModal } from "@/components/DownloadModal";
 import { DynamicHeader } from "@/components/DynamicHeader";
-import { ScrollReveal } from "@/components/ScrollReveal";
+import { SEOHelmet } from "@/components/SEOHelmet";
+import { supabase } from "@/integrations/supabase/client";
+import { ArrowLeft, Play, Copy, Check, ExternalLink, FileText, Video } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 import { useEventTracking } from "@/hooks/useEventTracking";
 import { useScrollVisibility } from "@/hooks/useScrollVisibility";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
-import { 
-  ArrowLeft, 
-  ExternalLink, 
-  FileText, 
-  Video,
-  Copy,
-  CheckCircle,
-  AlertCircle
-} from "lucide-react";
 
 interface Platform {
   nombre: string;
@@ -58,320 +48,176 @@ interface Tutorial {
 }
 
 const RecursoDetalle = () => {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const { registrarEvento } = useEventTracking();
+  const [searchParams] = useSearchParams();
+  const id = searchParams.get('id');
+  const tipo = searchParams.get('tipo') || 'flujo';
+  
   const [recurso, setRecurso] = useState<Flujo | Tutorial | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [showAllSteps, setShowAllSteps] = useState(false);
-  const [isCopied, setIsCopied] = useState(false);
-  const [editingPasoIndex, setEditingPasoIndex] = useState<number | null>(null);
-  const [newPaso, setNewPaso] = useState<Paso>({ descripcion: '', codigo: '', videoUrl: '' });
-  const [pasos, setPasos] = useState<Paso[]>([]);
-  const [plataformas, setPlataformas] = useState<Platform[]>([]);
-  const [showPlatformEditor, setShowPlatformEditor] = useState(false);
-  const [id, setID] = useState<string | null>(null);
-  const [tipo, setTipo] = useState<string | null>(null);
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+  const [copiedSteps, setCopiedSteps] = useState<Set<number>>(new Set());
+  const { registrarEvento } = useEventTracking();
+
+  // Refs para scroll visibility
+  const heroRef = useScrollVisibility({
+    descripcion: `Vista detalle de ${tipo}`,
+    recurso_id: id || undefined
+  });
+
+  const stepsRef = useScrollVisibility({
+    descripcion: `Sección de pasos - ${tipo}`,
+    recurso_id: id || undefined
+  });
 
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const idParam = params.get('id');
-    const tipoParam = params.get('tipo') || 'flujo';
-
-    if (!idParam) {
-      setError('ID del recurso no proporcionado.');
-      setLoading(false);
-      return;
+    if (id) {
+      fetchRecurso();
     }
+  }, [id, tipo]);
 
-    setID(idParam);
-    setTipo(tipoParam);
-    fetchRecurso(idParam, tipoParam);
-  }, [location.search]);
-
-  const fetchRecurso = async (id: string, tipo: string) => {
+  const fetchRecurso = async () => {
     try {
       setLoading(true);
-      setError(null);
-
-      let response;
+      
       if (tipo === 'tutorial') {
-        response = await supabase
+        const { data, error } = await supabase
           .from('tutoriales')
           .select('*')
           .eq('id', id)
           .single();
+
+        if (error) {
+          console.error('Error fetching tutorial:', error);
+          return;
+        }
+
+        if (data) {
+          const processedData: Tutorial = {
+            ...data,
+            plataformas: Array.isArray(data.plataformas) 
+              ? data.plataformas as Platform[]
+              : (data.plataformas ? JSON.parse(String(data.plataformas)) : [])
+          };
+          setRecurso(processedData);
+        }
       } else {
-        response = await supabase
+        const { data, error } = await supabase
           .from('flujos')
           .select('*')
           .eq('id', id)
           .single();
-      }
 
-      if (response.error) {
-        throw new Error(response.error.message);
-      }
+        if (error) {
+          console.error('Error fetching flujo:', error);
+          return;
+        }
 
-      if (!response.data) {
-        throw new Error('Recurso no encontrado.');
+        if (data) {
+          const processedData: Flujo = {
+            ...data,
+            pasos: Array.isArray(data.pasos) 
+              ? data.pasos as Paso[]
+              : (data.pasos ? JSON.parse(String(data.pasos)) : []),
+            plataformas: Array.isArray(data.plataformas) 
+              ? data.plataformas as Platform[]
+              : (data.plataformas ? JSON.parse(String(data.plataformas)) : [])
+          };
+          setRecurso(processedData);
+        }
       }
-
-      if (tipo === 'tutorial') {
-        const tutorial = {
-          ...response.data,
-          plataformas: Array.isArray(response.data.plataformas) ? response.data.plataformas : (response.data.plataformas ? JSON.parse(String(response.data.plataformas)) : [])
-        } as Tutorial;
-        setRecurso(tutorial);
-        setPlataformas(tutorial.plataformas || []);
-      } else {
-        const flujo = {
-          ...response.data,
-          pasos: Array.isArray(response.data.pasos) ? response.data.pasos : (response.data.pasos ? JSON.parse(String(response.data.pasos)) : []),
-          plataformas: Array.isArray(response.data.plataformas) ? response.data.plataformas : (response.data.plataformas ? JSON.parse(String(response.data.plataformas)) : [])
-        } as Flujo;
-        setRecurso(flujo);
-        setPasos(flujo.pasos || []);
-        setPlataformas(flujo.plataformas || []);
-      }
-    } catch (err: any) {
-      setError(err.message || 'Error al cargar el recurso.');
+    } catch (error) {
+      console.error('Error general:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handlePasoUpdate = async (index: number, field: keyof Paso, value: string) => {
-    const newPasos = [...pasos];
-    newPasos[index] = { ...newPasos[index], [field]: value };
-    setPasos(newPasos);
-  
-    // Optimistic update
-    setRecurso(prevRecurso => {
-      if (prevRecurso && 'pasos' in prevRecurso) {
-        const updatedPasos = [...prevRecurso.pasos];
-        updatedPasos[index] = { ...updatedPasos[index], [field]: value };
-        return { ...prevRecurso, pasos: updatedPasos };
-      }
-      return prevRecurso;
+  const handleStepComplete = (stepIndex: number) => {
+    const newCompleted = new Set(completedSteps);
+    if (completedSteps.has(stepIndex)) {
+      newCompleted.delete(stepIndex);
+    } else {
+      newCompleted.add(stepIndex);
+      
+      // Registrar evento de paso completado
+      registrarEvento({
+        tipo_evento: 'paso_completado',
+        paso_numero: stepIndex + 1,
+        recurso_id: id || undefined,
+        descripcion: `Paso ${stepIndex + 1} completado`
+      });
+    }
+    setCompletedSteps(newCompleted);
+    
+    // Simular guardado en localStorage
+    if (id) {
+      localStorage.setItem(`steps_${id}`, JSON.stringify(Array.from(newCompleted)));
+    }
+  };
+
+  const handleCopyCode = async (code: string, stepIndex: number) => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopiedSteps(prev => new Set([...prev, stepIndex]));
+      
+      registrarEvento({
+        tipo_evento: 'click',
+        descripcion: `Código copiado - Paso ${stepIndex + 1}`,
+        recurso_id: id || undefined
+      });
+
+      toast({
+        title: "Código copiado",
+        description: "El código ha sido copiado al portapapeles"
+      });
+
+      // Remover el estado de copiado después de 2 segundos
+      setTimeout(() => {
+        setCopiedSteps(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(stepIndex);
+          return newSet;
+        });
+      }, 2000);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo copiar el código",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDownload = () => {
+    registrarEvento({
+      tipo_evento: 'click',
+      descripcion: 'Botón acceso gratuito clickeado',
+      recurso_id: id || undefined
     });
-  
-    try {
-      if (tipo === 'flujo' && id) {
-        const updatedPasos = [...pasos]; // Use the local state 'pasos'
-        updatedPasos[index] = { ...updatedPasos[index], [field]: value };
-  
-        const { data, error } = await supabase
-          .from('flujos')
-          .update({ pasos: updatedPasos })
-          .eq('id', id);
-  
-        if (error) {
-          throw error;
-        }
-  
-        toast({
-          title: "Éxito",
-          description: "Paso actualizado correctamente"
-        });
-      }
-    } catch (error: any) {
-      console.error("Error updating paso:", error);
-      toast({
-        title: "Error",
-        description: "No se pudo actualizar el paso",
-        variant: "destructive"
-      });
-    }
+    setShowDownloadModal(true);
   };
-
-  const handleAddPaso = async () => {
-    if (!newPaso.descripcion.trim() || !newPaso.codigo.trim()) {
-      toast({
-        title: "Error",
-        description: "Descripción y código son requeridos",
-        variant: "destructive"
-      });
-      return;
-    }
-  
-    try {
-      if (tipo === 'flujo' && id) {
-        const updatedPasos = [...pasos, newPaso];
-  
-        const { data, error } = await supabase
-          .from('flujos')
-          .update({ pasos: updatedPasos })
-          .eq('id', id);
-  
-        if (error) {
-          throw error;
-        }
-  
-        setPasos(updatedPasos);
-        setRecurso(prevRecurso => {
-          if (prevRecurso && 'pasos' in prevRecurso) {
-            return { ...prevRecurso, pasos: updatedPasos };
-          }
-          return prevRecurso;
-        });
-        setNewPaso({ descripcion: '', codigo: '', videoUrl: '' });
-  
-        toast({
-          title: "Éxito",
-          description: "Paso agregado correctamente"
-        });
-      }
-    } catch (error: any) {
-      console.error("Error adding paso:", error);
-      toast({
-        title: "Error",
-        description: "No se pudo agregar el paso",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleRemovePaso = async (indexToRemove: number) => {
-    try {
-      if (tipo === 'flujo' && id) {
-        const updatedPasos = pasos.filter((_, index) => index !== indexToRemove);
-  
-        const { data, error } = await supabase
-          .from('flujos')
-          .update({ pasos: updatedPasos })
-          .eq('id', id);
-  
-        if (error) {
-          throw error;
-        }
-  
-        setPasos(updatedPasos);
-        setRecurso(prevRecurso => {
-          if (prevRecurso && 'pasos' in prevRecurso) {
-            return { ...prevRecurso, pasos: updatedPasos };
-          }
-          return prevRecurso;
-        });
-  
-        toast({
-          title: "Éxito",
-          description: "Paso eliminado correctamente"
-        });
-      }
-    } catch (error: any) {
-      console.error("Error removing paso:", error);
-      toast({
-        title: "Error",
-        description: "No se pudo eliminar el paso",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleUpdatePlatforms = async (updatedPlatforms: Platform[]) => {
-    try {
-      if (tipo === 'tutorial' && id) {
-        const { data, error } = await supabase
-          .from('tutoriales')
-          .update({ plataformas: updatedPlatforms })
-          .eq('id', id);
-
-        if (error) {
-          throw error;
-        }
-
-        setPlataformas(updatedPlatforms);
-        setRecurso(prevRecurso => {
-          if (prevRecurso && 'plataformas' in prevRecurso) {
-            return { ...prevRecurso, plataformas: updatedPlatforms };
-          }
-          return prevRecurso;
-        });
-
-        toast({
-          title: "Éxito",
-          description: "Plataformas actualizadas correctamente"
-        });
-      } else if (tipo === 'flujo' && id) {
-        const { data, error } = await supabase
-          .from('flujos')
-          .update({ plataformas: updatedPlatforms })
-          .eq('id', id);
-
-        if (error) {
-          throw error;
-        }
-
-        setPlataformas(updatedPlatforms);
-        setRecurso(prevRecurso => {
-          if (prevRecurso && 'plataformas' in prevRecurso) {
-            return { ...prevRecurso, plataformas: updatedPlatforms };
-          }
-          return prevRecurso;
-        });
-
-        toast({
-          title: "Éxito",
-          description: "Plataformas actualizadas correctamente"
-        });
-      }
-    } catch (error: any) {
-      console.error("Error updating plataformas:", error);
-      toast({
-        title: "Error",
-        description: "No se pudieron actualizar las plataformas",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleCopyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text)
-      .then(() => {
-        setIsCopied(true);
-        setTimeout(() => setIsCopied(false), 2000);
-      })
-      .catch(err => {
-        console.error("Failed to copy text: ", err);
-        toast({
-          title: "Error",
-          description: "No se pudo copiar el código",
-          variant: "destructive"
-        });
-      });
-  };
-
-  // Scroll visibility tracking
-  const recursoRef = useScrollVisibility({ 
-    descripcion: 'Visualización detalle recurso', 
-    recurso_id: id || 'unknown'
-  });
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-blue-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-aumatia-blue mx-auto mb-4"></div>
-          <p className="text-gray-600">Cargando recurso...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-aumatia-blue mx-auto"></div>
+          <p className="mt-4 text-gray-600">Cargando recurso...</p>
         </div>
       </div>
     );
   }
 
-  if (error || !recurso) {
+  if (!recurso) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto px-4">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Recurso no encontrado</h1>
-          <p className="text-gray-600 mb-6">
-            El recurso que buscas no existe o ha sido eliminado.
-          </p>
+      <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-aumatia-dark mb-4">Recurso no encontrado</h2>
+          <p className="text-gray-600 mb-6">El recurso que buscas no existe o ha sido eliminado.</p>
           <Link to="/recursos">
             <Button className="bg-aumatia-blue hover:bg-aumatia-dark">
-              <ArrowLeft className="mr-2 w-4 h-4" />
-              Volver a Recursos
+              Volver a recursos
             </Button>
           </Link>
         </div>
@@ -379,171 +225,198 @@ const RecursoDetalle = () => {
     );
   }
 
-  const esTutorial = tipo === 'tutorial';
+  const isFlujo = tipo === 'flujo';
+  const titulo = isFlujo ? (recurso as Flujo).nombre : (recurso as Tutorial).titulo;
+  const descripcion = recurso.descripcion;
 
   return (
-    <>
+    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-blue-50 font-poppins">
       <SEOHelmet 
-        title={`${recurso.nombre || recurso.titulo} - Aumatia`}
-        description={recurso.descripcion || `Recurso de automatización: ${recurso.nombre || recurso.titulo}`}
-        ogTitle={`${recurso.nombre || recurso.titulo} - Aumatia`}
-        ogDescription={recurso.descripcion || `Descubre este recurso de automatización en Aumatia`}
-        ogImage={recurso.imagen_url || "https://i.imgur.com/wR2n4Hg.png"}
+        title={`${titulo} - Aumatia`}
+        description={descripcion || `${isFlujo ? 'Flujo' : 'Tutorial'} de automatización en Aumatia`}
       />
       
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-        <DynamicHeader>
-          <nav className="flex items-center gap-4">
-            <Link to="/recursos">
-              <Button variant="outline" size="sm">
-                <ArrowLeft className="mr-2 w-4 h-4" />
-                Recursos
-              </Button>
-            </Link>
-            <SocialLinks iconSize={20} className="gap-3" />
-          </nav>
-        </DynamicHeader>
+      <DynamicHeader>
+        <Link to="/recursos" className="text-aumatia-blue hover:text-aumatia-dark inline-flex items-center group transition-colors">
+          <ArrowLeft className="mr-2 w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+          Volver a recursos
+        </Link>
+      </DynamicHeader>
 
-        <main className="container mx-auto px-4 py-8">
-          <div ref={recursoRef} className="max-w-4xl mx-auto">
-            <Card className="shadow-lg rounded-lg">
-              <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between space-y-2 md:space-x-4 p-6">
-                <div>
-                  <CardTitle className="text-2xl font-bold text-aumatia-dark">
-                    {esTutorial ? (recurso as Tutorial).titulo : (recurso as Flujo).nombre}
-                  </CardTitle>
-                  <CardDescription className="text-gray-600">
-                    {esTutorial ? (recurso as Tutorial).descripcion : (recurso as Flujo).descripcion}
-                  </CardDescription>
-                </div>
-                {esTutorial ? (
-                  <div className="flex items-center gap-2">
-                    {((recurso as Tutorial).video_url) && (
-                      <a href={(recurso as Tutorial).video_url} target="_blank" rel="noopener noreferrer">
-                        <Button>
-                          <Video className="mr-2 w-4 h-4" />
-                          Ver Tutorial
-                        </Button>
-                      </a>
-                    )}
-                    <Link to="/admin_recursos">
-                      <Button variant="outline">
-                        <Settings className="mr-2 w-4 h-4" />
-                        Editar
-                      </Button>
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    {((recurso as Flujo).link_descarga) && (
-                      <a href={(recurso as Flujo).link_descarga} target="_blank" rel="noopener noreferrer">
-                        <Button>
-                          <FileText className="mr-2 w-4 h-4" />
-                          Descargar Flujo
-                        </Button>
-                      </a>
-                    )}
-                    <Link to="/admin_recursos">
-                      <Button variant="outline">
-                        <Settings className="mr-2 w-4 h-4" />
-                        Editar
-                      </Button>
-                    </Link>
-                  </div>
-                )}
-              </CardHeader>
-
-              {((recurso as Flujo).imagen_url || (recurso as Tutorial).imagen_url) && (
-                <img
-                  src={(recurso as Flujo).imagen_url || (recurso as Tutorial).imagen_url}
-                  alt={esTutorial ? (recurso as Tutorial).titulo : (recurso as Flujo).nombre}
-                  className="w-full object-cover rounded-b-lg"
-                />
+      <main className="container mx-auto px-4 py-12">
+        <div className="max-w-4xl mx-auto">
+          {/* Hero Section */}
+          <div ref={heroRef} className="text-center mb-12">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              {isFlujo ? (
+                <FileText className="w-6 h-6 text-aumatia-blue" />
+              ) : (
+                <Video className="w-6 h-6 text-aumatia-blue" />
               )}
+              <Badge variant="secondary" className="bg-aumatia-blue/10 text-aumatia-blue">
+                {isFlujo ? 'Flujo' : 'Tutorial'}
+              </Badge>
+            </div>
+            
+            <h1 className="text-4xl md:text-5xl font-bold text-aumatia-dark mb-6">
+              {titulo}
+            </h1>
+            
+            {descripcion && (
+              <p className="text-xl text-gray-600 mb-8 leading-relaxed">
+                {descripcion}
+              </p>
+            )}
 
-              <CardContent className="p-6">
-                <h3 className="text-xl font-semibold text-aumatia-dark mb-4">
-                  Plataformas Utilizadas
+            {recurso.plataformas && recurso.plataformas.length > 0 && (
+              <div className="mb-8">
+                <h3 className="text-lg font-semibold text-aumatia-dark mb-4">
+                  Plataformas utilizadas:
                 </h3>
-                {plataformas && plataformas.length > 0 ? (
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {plataformas.map((platform, index) => (
-                      <a
-                        key={index}
-                        href={platform.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center bg-gray-100 rounded-full px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-200 transition-colors"
-                      >
-                        {platform.nombre}
-                        <ExternalLink className="ml-1 w-4 h-4" />
-                      </a>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-500">No se especificaron plataformas.</p>
-                )}
+                <PlatformChips platforms={recurso.plataformas} />
+              </div>
+            )}
 
-                {!esTutorial && (
-                  <>
-                    <div className="flex justify-between items-center mb-4">
-                      <h3 className="text-xl font-semibold text-aumatia-dark">
-                        Pasos del Flujo
-                      </h3>
-                      <Button variant="secondary" size="sm" onClick={() => setShowAllSteps(!showAllSteps)}>
-                        {showAllSteps ? 'Ver menos pasos' : 'Ver todos los pasos'}
-                      </Button>
-                    </div>
+            {isFlujo && (
+              <Button
+                onClick={handleDownload}
+                size="lg"
+                className="bg-aumatia-blue hover:bg-aumatia-dark text-white px-8 py-3 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+              >
+                🎯 Acceso Gratuito
+              </Button>
+            )}
+          </div>
 
-                    {pasos.slice(0, showAllSteps ? pasos.length : 3).map((paso, index) => (
-                      <Card key={index} className="mb-4 border">
-                        <CardHeader>
-                          <CardTitle>Paso {index + 1}</CardTitle>
-                          <CardDescription>{paso.descripcion}</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-2">
-                          <div className="relative">
-                            <Textarea
-                              value={paso.codigo}
-                              onChange={(e) => handlePasoUpdate(index, 'codigo', e.target.value)}
-                              rows={4}
-                              className="w-full rounded-md resize-none"
-                            />
+          <Separator className="mb-12" />
+
+          {/* Steps Section for Flujos */}
+          {isFlujo && (recurso as Flujo).pasos && (recurso as Flujo).pasos.length > 0 && (
+            <div ref={stepsRef} className="mb-12">
+              <h2 className="text-3xl font-bold text-aumatia-dark mb-8 text-center">
+                📋 Pasos del flujo
+              </h2>
+              
+              <div className="space-y-8">
+                {(recurso as Flujo).pasos.map((paso, index) => (
+                  <Card key={index} className={`border-l-4 transition-all duration-300 ${
+                    completedSteps.has(index) 
+                      ? 'border-l-green-500 bg-green-50' 
+                      : 'border-l-aumatia-blue bg-white'
+                  } shadow-lg hover:shadow-xl`}>
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <CardTitle className="flex items-center gap-3 text-aumatia-dark">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-white ${
+                              completedSteps.has(index) ? 'bg-green-500' : 'bg-aumatia-blue'
+                            }`}>
+                              {completedSteps.has(index) ? '✓' : index + 1}
+                            </div>
+                            Paso {index + 1}
+                          </CardTitle>
+                          <CardDescription className="text-gray-600 mt-2">
+                            {paso.descripcion}
+                          </CardDescription>
+                        </div>
+                        <Button
+                          variant={completedSteps.has(index) ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => handleStepComplete(index)}
+                          className={completedSteps.has(index) ? "bg-green-500 hover:bg-green-600" : ""}
+                        >
+                          {completedSteps.has(index) ? 'Completado' : 'Marcar'}
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {paso.codigo && (
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="font-semibold text-aumatia-dark">Código:</h4>
                             <Button
-                              variant="ghost"
-                              size="icon"
-                              className="absolute top-2 right-2 text-gray-500 hover:text-aumatia-blue"
-                              onClick={() => handleCopyToClipboard(paso.codigo)}
-                              disabled={isCopied}
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleCopyCode(paso.codigo, index)}
+                              className="gap-2"
                             >
-                              {isCopied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                              {copiedSteps.has(index) ? (
+                                <>
+                                  <Check className="w-4 h-4" />
+                                  Copiado
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="w-4 h-4" />
+                                  Copiar
+                                </>
+                              )}
                             </Button>
                           </div>
-                          {paso.videoUrl && (
-                            <a href={paso.videoUrl} target="_blank" rel="noopener noreferrer">
-                              <Button variant="link">
-                                Ver Video
-                                <ExternalLink className="ml-1 w-4 h-4" />
-                              </Button>
-                            </a>
-                          )}
-                        </CardContent>
-                      </Card>
-                    ))}
+                          <pre className="bg-gray-100 p-4 rounded-lg overflow-x-auto border">
+                            <code className="text-sm font-mono">{paso.codigo}</code>
+                          </pre>
+                        </div>
+                      )}
+                      
+                      {paso.videoUrl && (
+                        <div>
+                          <h4 className="font-semibold text-aumatia-dark mb-2">Video explicativo:</h4>
+                          <a
+                            href={paso.videoUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 text-aumatia-blue hover:text-aumatia-dark transition-colors"
+                          >
+                            <Play className="w-4 h-4" />
+                            Ver video del paso
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
 
-                    {!showAllSteps && pasos.length > 3 && (
-                      <p className="text-center text-gray-500">
-                        Mostrando los primeros 3 pasos. Haz clic en "Ver todos los pasos" para ver el resto.
-                      </p>
-                    )}
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </main>
-      </div>
-    </>
+          {/* Video Section for Tutorials */}
+          {!isFlujo && (recurso as Tutorial).video_url && (
+            <div className="mb-12">
+              <h2 className="text-3xl font-bold text-aumatia-dark mb-8 text-center">
+                🎥 Tutorial
+              </h2>
+              <Card className="border-0 shadow-xl">
+                <CardContent className="p-6">
+                  <div className="aspect-video bg-gray-100 rounded-lg flex items-center justify-center">
+                    <a
+                      href={(recurso as Tutorial).video_url!}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-3 bg-aumatia-blue text-white px-6 py-3 rounded-lg hover:bg-aumatia-dark transition-colors"
+                    >
+                      <Play className="w-5 h-5" />
+                      Ver Tutorial
+                      <ExternalLink className="w-4 h-4" />
+                    </a>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </div>
+      </main>
+
+      {/* Download Modal */}
+      {showDownloadModal && isFlujo && (
+        <DownloadModal
+          isOpen={showDownloadModal}
+          onClose={() => setShowDownloadModal(false)}
+          flujo={recurso as Flujo}
+        />
+      )}
+    </div>
   );
 };
 

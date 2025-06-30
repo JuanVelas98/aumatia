@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { PlatformEditor } from "@/components/PlatformEditor";
+import { StepEditor } from "@/components/StepEditor";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { 
@@ -527,6 +528,11 @@ const AdminRecursos = () => {
                         placeholder="https://drive.google.com/..."
                       />
                     </div>
+
+                    <StepEditor
+                      steps={flujoForm.pasos}
+                      onChange={(steps) => setFlujoForm({...flujoForm, pasos: steps})}
+                    />
 
                     <PlatformEditor
                       platforms={flujoForm.plataformas}

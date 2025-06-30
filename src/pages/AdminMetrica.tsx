@@ -8,7 +8,11 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell, Respon
 import { DynamicHeader } from "@/components/DynamicHeader";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Download, FileText, Clock, CheckSquare, Filter, BarChart as BarChartIcon, PieChart as PieChartIcon } from "lucide-react";
+import { ArrowLeft, Download, FileText, Clock, CheckSquare, Filter, BarChart as BarChartIcon, PieChart as PieChartIcon, Calendar } from "lucide-react";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface MetricaSummary {
   totalDescargas: number;
@@ -49,7 +53,8 @@ const AdminMetrica = () => {
   const [tiposEventos, setTiposEventos] = useState<TipoEvento[]>([]);
   const [clicksData, setClicksData] = useState<ClickData[]>([]);
   const [tiemposPagina, setTiemposPagina] = useState<TiempoPagina[]>([]);
-  const [filtroFecha, setFiltroFecha] = useState<'7d' | '30d' | 'all'>('30d');
+  const [filtroFecha, setFiltroFecha] = useState<'7d' | '30d' | 'custom' | 'all'>('30d');
+  const [fechaPersonalizada, setFechaPersonalizada] = useState<Date | undefined>(undefined);
   const [loading, setLoading] = useState(true);
 
   const isAdmin = true; // En producción esto debería verificarse con autenticación
@@ -58,7 +63,7 @@ const AdminMetrica = () => {
     if (isAdmin) {
       fetchMetricas();
     }
-  }, [filtroFecha, isAdmin]);
+  }, [filtroFecha, fechaPersonalizada, isAdmin]);
 
   const getFiltroFecha = () => {
     const now = new Date();
@@ -69,19 +74,43 @@ const AdminMetrica = () => {
       case '30d':
         const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
         return thirtyDaysAgo.toISOString();
+      case 'custom':
+        if (fechaPersonalizada) {
+          // Para un día específico, usar desde las 00:00 hasta las 23:59
+          const startOfDay = new Date(fechaPersonalizada);
+          startOfDay.setHours(0, 0, 0, 0);
+          return startOfDay.toISOString();
+        }
+        return null;
       default:
         return null;
     }
   };
 
+  const getFiltroFechaFin = () => {
+    if (filtroFecha === 'custom' && fechaPersonalizada) {
+      const endOfDay = new Date(fechaPersonalizada);
+      endOfDay.setHours(23, 59, 59, 999);
+      return endOfDay.toISOString();
+    }
+    return null;
+  };
+
   const fetchMetricas = async () => {
     try {
       setLoading(true);
-      const fechaFiltro = getFiltroFecha();
+      const fechaInicio = getFiltroFecha();
+      const fechaFin = getFiltroFechaFin();
+      
       let query = supabase.from('eventos_usuarios').select('*');
       
-      if (fechaFiltro) {
-        query = query.gte('creado_en', fechaFiltro);
+      if (fechaInicio) {
+        query = query.gte('creado_en', fechaInicio);
+        
+        // Si es un día específico, agregar filtro de fin
+        if (fechaFin) {
+          query = query.lte('creado_en', fechaFin);
+        }
       }
 
       const { data: eventos, error } = await query;
@@ -183,6 +212,19 @@ const AdminMetrica = () => {
     return minutos > 0 ? `${minutos}m ${segs}s` : `${segs}s`;
   };
 
+  const getFiltroTexto = () => {
+    switch (filtroFecha) {
+      case '7d':
+        return 'Últimos 7 días';
+      case '30d':
+        return 'Últimos 30 días';
+      case 'custom':
+        return fechaPersonalizada ? `Filtrando por: ${format(fechaPersonalizada, "d 'de' MMMM yyyy", { locale: require('date-fns/locale/es') })}` : 'Fecha personalizada';
+      default:
+        return 'Todo el tiempo';
+    }
+  };
+
   const COLORS = ['#4A90E2', '#1B3A57', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
 
   if (!isAdmin) {
@@ -217,24 +259,59 @@ const AdminMetrica = () => {
             <div>
               <h1 className="text-3xl font-bold text-aumatia-dark">📊 Dashboard de Métricas</h1>
               <p className="text-gray-600 mt-2">Analytics y estadísticas de comportamiento de usuarios</p>
+              {filtroFecha !== 'all' && (
+                <p className="text-sm text-aumatia-blue mt-1 font-medium">
+                  {getFiltroTexto()}
+                </p>
+              )}
             </div>
             
             {/* Filtros de fecha */}
-            <div className="flex items-center gap-2 bg-white rounded-lg p-1 shadow-sm">
-              <Filter className="w-4 h-4 text-gray-500 ml-2" />
-              {(['7d', '30d', 'all'] as const).map((periodo) => (
-                <Button
-                  key={periodo}
-                  variant={filtroFecha === periodo ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setFiltroFecha(periodo)}
-                  className={filtroFecha === periodo ? "bg-aumatia-blue" : ""}
-                >
-                  {periodo === '7d' ? 'Últimos 7 días' : 
-                   periodo === '30d' ? 'Últimos 30 días' : 
-                   'Todo el tiempo'}
-                </Button>
-              ))}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+              <div className="flex items-center gap-2 bg-white rounded-lg p-1 shadow-sm">
+                <Filter className="w-4 h-4 text-gray-500 ml-2" />
+                {(['7d', '30d', 'custom', 'all'] as const).map((periodo) => (
+                  <Button
+                    key={periodo}
+                    variant={filtroFecha === periodo ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setFiltroFecha(periodo)}
+                    className={filtroFecha === periodo ? "bg-aumatia-blue" : ""}
+                  >
+                    {periodo === '7d' ? 'Últimos 7 días' : 
+                     periodo === '30d' ? 'Últimos 30 días' : 
+                     periodo === 'custom' ? 'Fecha específica' :
+                     'Todo el tiempo'}
+                  </Button>
+                ))}
+              </div>
+
+              {/* Selector de fecha personalizada */}
+              {filtroFecha === 'custom' && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-[240px] justify-start text-left font-normal",
+                        !fechaPersonalizada && "text-muted-foreground"
+                      )}
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {fechaPersonalizada ? format(fechaPersonalizada, "dd/MM/yyyy") : "Seleccionar fecha"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={fechaPersonalizada}
+                      onSelect={setFechaPersonalizada}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              )}
             </div>
           </div>
 
