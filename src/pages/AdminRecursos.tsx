@@ -513,8 +513,7 @@ const AdminRecursos = () => {
                     <Label>Plataformas</Label>
                     <PlatformEditor
                       platforms={plataformas}
-                      setPlatforms={setPlataformas}
-                      darkMode={darkMode}
+                      onChange={setPlataformas}
                     />
                   </div>
 
@@ -666,8 +665,7 @@ const AdminRecursos = () => {
                     <Label>Plataformas</Label>
                     <PlatformEditor
                       platforms={plataformas}
-                      setPlatforms={setPlataformas}
-                      darkMode={darkMode}
+                      onChange={setPlataformas}
                     />
                   </div>
 
