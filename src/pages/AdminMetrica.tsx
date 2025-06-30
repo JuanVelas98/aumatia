@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,10 +18,16 @@ interface MetricaSummary {
   totalFormularios: number;
   tiempoPromedio: number;
   totalPasos: number;
+  totalDescargasReales: number;
 }
 
 interface RecursoDescarga {
   recurso_id: string;
+  total: number;
+}
+
+interface FlujosDescargados {
+  flujo: string;
   total: number;
 }
 
@@ -47,9 +52,11 @@ const AdminMetrica = () => {
     totalDescargas: 0,
     totalFormularios: 0,
     tiempoPromedio: 0,
-    totalPasos: 0
+    totalPasos: 0,
+    totalDescargasReales: 0
   });
   const [recursosDescargados, setRecursosDescargados] = useState<RecursoDescarga[]>([]);
+  const [flujosDescargados, setFlujosDescargados] = useState<FlujosDescargados[]>([]);
   const [tiposEventos, setTiposEventos] = useState<TipoEvento[]>([]);
   const [clicksData, setClicksData] = useState<ClickData[]>([]);
   const [tiemposPagina, setTiemposPagina] = useState<TiempoPagina[]>([]);
@@ -102,12 +109,12 @@ const AdminMetrica = () => {
       const fechaInicio = getFiltroFecha();
       const fechaFin = getFiltroFechaFin();
       
+      // Fetch eventos_usuarios data
       let query = supabase.from('eventos_usuarios').select('*');
       
       if (fechaInicio) {
         query = query.gte('creado_en', fechaInicio);
         
-        // Si es un día específico, agregar filtro de fin
         if (fechaFin) {
           query = query.lte('creado_en', fechaFin);
         }
@@ -120,8 +127,25 @@ const AdminMetrica = () => {
         return;
       }
 
-      // Calcular métricas de resumen
-      const descargas = eventos?.filter(e => e.tipo_evento === 'descarga') || [];
+      // Fetch descargas data
+      let descargasQuery = supabase.from('descargas').select('*');
+      
+      if (fechaInicio) {
+        descargasQuery = descargasQuery.gte('creado_en', fechaInicio);
+        
+        if (fechaFin) {
+          descargasQuery = descargasQuery.lte('creado_en', fechaFin);
+        }
+      }
+
+      const { data: descargas, error: descargasError } = await descargasQuery;
+
+      if (descargasError) {
+        console.error('Error fetching descargas:', descargasError);
+      }
+
+      // Calculate existing metrics from eventos_usuarios
+      const descargasEventos = eventos?.filter(e => e.tipo_evento === 'descarga') || [];
       const formularios = eventos?.filter(e => e.tipo_evento === 'formulario_enviado') || [];
       const tiempos = eventos?.filter(e => e.tipo_evento === 'tiempo') || [];
       const pasos = eventos?.filter(e => e.tipo_evento === 'paso_completado') || [];
@@ -131,14 +155,15 @@ const AdminMetrica = () => {
         : 0;
 
       setMetricas({
-        totalDescargas: descargas.length,
+        totalDescargas: descargasEventos.length,
         totalFormularios: formularios.length,
         tiempoPromedio: Math.round(tiempoPromedio),
-        totalPasos: pasos.length
+        totalPasos: pasos.length,
+        totalDescargasReales: descargas?.length || 0
       });
 
-      // Recursos más descargados
-      const descargasPorRecurso = descargas.reduce((acc: { [key: string]: number }, evento) => {
+      // Existing recursos descargados logic
+      const descargasPorRecurso = descargasEventos.reduce((acc: { [key: string]: number }, evento) => {
         const recurso = evento.recurso_id || 'Sin especificar';
         acc[recurso] = (acc[recurso] || 0) + 1;
         return acc;
@@ -149,6 +174,20 @@ const AdminMetrica = () => {
           .map(([recurso_id, total]) => ({ recurso_id, total }))
           .sort((a, b) => b.total - a.total)
           .slice(0, 10)
+      );
+
+      // New flujos descargados from descargas table
+      const flujosPorDescarga = descargas?.reduce((acc: { [key: string]: number }, descarga) => {
+        const flujo = descarga.flujo || 'Sin especificar';
+        acc[flujo] = (acc[flujo] || 0) + 1;
+        return acc;
+      }, {}) || {};
+
+      setFlujosDescargados(
+        Object.entries(flujosPorDescarga)
+          .map(([flujo, total]) => ({ flujo, total }))
+          .sort((a, b) => b.total - a.total)
+          .slice(0, 5)
       );
 
       // Distribución de tipos de eventos
@@ -323,15 +362,26 @@ const AdminMetrica = () => {
           ) : (
             <>
               {/* Tarjetas de resumen */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
                 <Card className="border-0 shadow-lg bg-white hover:shadow-xl transition-shadow">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium text-gray-600">Total Descargas</CardTitle>
                     <Download className="h-4 w-4 text-aumatia-blue" />
                   </CardHeader>
                   <CardContent>
+                    <div className="text-2xl font-bold text-aumatia-dark">{metricas.totalDescargasReales}</div>
+                    <p className="text-xs text-gray-500 mt-1">Cantidad de flujos descargados desde la plataforma</p>
+                  </CardContent>
+                </Card>
+
+                <Card className="border-0 shadow-lg bg-white hover:shadow-xl transition-shadow">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-gray-600">Eventos Descarga</CardTitle>
+                    <Download className="h-4 w-4 text-aumatia-blue" />
+                  </CardHeader>
+                  <CardContent>
                     <div className="text-2xl font-bold text-aumatia-dark">{metricas.totalDescargas}</div>
-                    <p className="text-xs text-gray-500 mt-1">Flujos descargados</p>
+                    <p className="text-xs text-gray-500 mt-1">Eventos de descarga registrados</p>
                   </CardContent>
                 </Card>
 
@@ -371,14 +421,14 @@ const AdminMetrica = () => {
 
               {/* Gráficos */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                {/* Gráfico de barras - Recursos más descargados */}
+                {/* Gráfico de barras - Flujos más descargados (nueva fuente) */}
                 <Card className="border-0 shadow-lg bg-white">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <BarChartIcon className="h-5 w-5 text-aumatia-blue" />
-                      Recursos Más Descargados
+                      Flujos Más Descargados
                     </CardTitle>
-                    <CardDescription>Top 10 flujos con más descargas</CardDescription>
+                    <CardDescription>Top 5 flujos con más descargas reales</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <ChartContainer
@@ -386,6 +436,46 @@ const AdminMetrica = () => {
                         total: {
                           label: "Descargas",
                           color: "#4A90E2",
+                        },
+                      }}
+                      className="h-[300px]"
+                    >
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={flujosDescargados}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis 
+                            dataKey="flujo" 
+                            angle={-45}
+                            textAnchor="end"
+                            height={100}
+                            fontSize={12}
+                          />
+                          <YAxis />
+                          <ChartTooltip 
+                            content={<ChartTooltipContent />}
+                          />
+                          <Bar dataKey="total" fill="#4A90E2" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </ChartContainer>
+                  </CardContent>
+                </Card>
+
+                {/* Gráfico de barras - Recursos más descargados (eventos) */}
+                <Card className="border-0 shadow-lg bg-white">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <BarChartIcon className="h-5 w-5 text-aumatia-blue" />
+                      Recursos Más Descargados (Eventos)
+                    </CardTitle>
+                    <CardDescription>Top 10 recursos con más eventos de descarga</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <ChartContainer
+                      config={{
+                        total: {
+                          label: "Descargas",
+                          color: "#1B3A57",
                         },
                       }}
                       className="h-[300px]"
@@ -404,14 +494,16 @@ const AdminMetrica = () => {
                           <ChartTooltip 
                             content={<ChartTooltipContent />}
                           />
-                          <Bar dataKey="total" fill="#4A90E2" radius={[4, 4, 0, 0]} />
+                          <Bar dataKey="total" fill="#1B3A57" radius={[4, 4, 0, 0]} />
                         </BarChart>
                       </ResponsiveContainer>
                     </ChartContainer>
                   </CardContent>
                 </Card>
+              </div>
 
-                {/* Gráfico circular - Distribución de eventos */}
+              {/* Gráfico circular - Distribución de eventos */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
                 <Card className="border-0 shadow-lg bg-white">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
