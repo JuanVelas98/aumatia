@@ -13,7 +13,7 @@ export const useScrollVisibility = ({
   recurso_id, 
   threshold = 0.5 
 }: UseScrollVisibilityProps) => {
-  const ref = useRef<HTMLElement>(null);
+  const ref = useRef<HTMLDivElement>(null);
   const hasBeenVisible = useRef(false);
   const { registrarEvento } = useEventTracking();
 

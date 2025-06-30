@@ -99,8 +99,8 @@ const AdminRecursos = () => {
       } else {
         const processedFlujos = flujosResponse.data.map(flujo => ({
           ...flujo,
-          pasos: Array.isArray(flujo.pasos) ? flujo.pasos : (flujo.pasos ? JSON.parse(flujo.pasos) : []),
-          plataformas: Array.isArray(flujo.plataformas) ? flujo.plataformas : (flujo.plataformas ? JSON.parse(flujo.plataformas) : [])
+          pasos: Array.isArray(flujo.pasos) ? flujo.pasos : (flujo.pasos ? JSON.parse(String(flujo.pasos)) : []),
+          plataformas: Array.isArray(flujo.plataformas) ? flujo.plataformas : (flujo.plataformas ? JSON.parse(String(flujo.plataformas)) : [])
         }));
         setFlujos(processedFlujos);
       }
@@ -110,7 +110,7 @@ const AdminRecursos = () => {
       } else {
         const processedTutoriales = tutorialesResponse.data.map(tutorial => ({
           ...tutorial,
-          plataformas: Array.isArray(tutorial.plataformas) ? tutorial.plataformas : (tutorial.plataformas ? JSON.parse(tutorial.plataformas) : [])
+          plataformas: Array.isArray(tutorial.plataformas) ? tutorial.plataformas : (tutorial.plataformas ? JSON.parse(String(tutorial.plataformas)) : [])
         }));
         setTutoriales(processedTutoriales);
       }
@@ -167,8 +167,8 @@ const AdminRecursos = () => {
         descripcion: flujoForm.descripcion.trim() || null,
         imagen_url: flujoForm.imagen_url.trim() || null,
         link_descarga: flujoForm.link_descarga.trim() || null,
-        pasos: flujoForm.pasos,
-        plataformas: flujoForm.plataformas
+        pasos: flujoForm.pasos as any,
+        plataformas: flujoForm.plataformas as any
       };
 
       const { error } = await supabase
@@ -224,7 +224,7 @@ const AdminRecursos = () => {
         descripcion: tutorialForm.descripcion.trim() || null,
         imagen_url: tutorialForm.imagen_url.trim() || null,
         video_url: tutorialForm.video_url.trim(),
-        plataformas: tutorialForm.plataformas
+        plataformas: tutorialForm.plataformas as any
       };
 
       const { error } = await supabase
@@ -293,8 +293,8 @@ const AdminRecursos = () => {
           descripcion: flujoForm.descripcion.trim() || null,
           imagen_url: flujoForm.imagen_url.trim() || null,
           link_descarga: flujoForm.link_descarga.trim() || null,
-          pasos: flujoForm.pasos,
-          plataformas: flujoForm.plataformas
+          pasos: flujoForm.pasos as any,
+          plataformas: flujoForm.plataformas as any
         })
         .eq('id', editingFlujo.id);
 
@@ -335,7 +335,7 @@ const AdminRecursos = () => {
           descripcion: tutorialForm.descripcion.trim() || null,
           imagen_url: tutorialForm.imagen_url.trim() || null,
           video_url: tutorialForm.video_url.trim() || null,
-          plataformas: tutorialForm.plataformas
+          plataformas: tutorialForm.plataformas as any
         })
         .eq('id', editingTutorial.id);
 
@@ -531,7 +531,6 @@ const AdminRecursos = () => {
                     <PlatformEditor
                       platforms={flujoForm.plataformas}
                       onChange={(platforms) => setFlujoForm({...flujoForm, plataformas: platforms})}
-                      title="Plataformas del Flujo"
                     />
 
                     <div className="flex justify-end gap-3">
@@ -705,7 +704,6 @@ const AdminRecursos = () => {
                     <PlatformEditor
                       platforms={tutorialForm.plataformas}
                       onChange={(platforms) => setTutorialForm({...tutorialForm, plataformas: platforms})}
-                      title="Plataformas del Tutorial"
                     />
 
                     <div className="flex justify-end gap-3">
