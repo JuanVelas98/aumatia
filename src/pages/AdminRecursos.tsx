@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -168,8 +169,8 @@ const AdminRecursos = () => {
         descripcion: flujoForm.descripcion.trim() || null,
         imagen_url: flujoForm.imagen_url.trim() || null,
         link_descarga: flujoForm.link_descarga.trim() || null,
-        pasos: flujoForm.pasos,
-        plataformas: flujoForm.plataformas
+        pasos: flujoForm.pasos as any,
+        plataformas: flujoForm.plataformas as any
       };
 
       const { error } = await supabase
@@ -310,8 +311,8 @@ const AdminRecursos = () => {
         descripcion: flujoForm.descripcion.trim() || null,
         imagen_url: flujoForm.imagen_url.trim() || null,
         link_descarga: flujoForm.link_descarga.trim() || null,
-        pasos: flujoForm.pasos,
-        plataformas: flujoForm.plataformas
+        pasos: flujoForm.pasos as any,
+        plataformas: flujoForm.plataformas as any
       };
 
       console.log('Update data to be sent:', updateData);
