@@ -168,8 +168,8 @@ const AdminRecursos = () => {
         descripcion: flujoForm.descripcion.trim() || null,
         imagen_url: flujoForm.imagen_url.trim() || null,
         link_descarga: flujoForm.link_descarga.trim() || null,
-        pasos: JSON.stringify(flujoForm.pasos),
-        plataformas: JSON.stringify(flujoForm.plataformas)
+        pasos: flujoForm.pasos,
+        plataformas: flujoForm.plataformas
       };
 
       const { error } = await supabase
@@ -283,10 +283,19 @@ const AdminRecursos = () => {
   const handleUpdateFlujo = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!editingFlujo || !flujoForm.nombre.trim()) {
+    if (!editingFlujo) {
       toast({
         title: "Error",
-        description: "Datos del flujo incompletos",
+        description: "No se encontró el flujo a actualizar",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!flujoForm.nombre.trim()) {
+      toast({
+        title: "Error",
+        description: "El nombre del flujo es requerido",
         variant: "destructive"
       });
       return;
@@ -301,19 +310,24 @@ const AdminRecursos = () => {
         descripcion: flujoForm.descripcion.trim() || null,
         imagen_url: flujoForm.imagen_url.trim() || null,
         link_descarga: flujoForm.link_descarga.trim() || null,
-        pasos: JSON.stringify(flujoForm.pasos),
-        plataformas: JSON.stringify(flujoForm.plataformas)
+        pasos: flujoForm.pasos,
+        plataformas: flujoForm.plataformas
       };
 
-      const { error } = await supabase
+      console.log('Update data to be sent:', updateData);
+
+      const { data, error } = await supabase
         .from('flujos')
         .update(updateData)
-        .eq('id', editingFlujo.id);
+        .eq('id', editingFlujo.id)
+        .select();
 
       if (error) {
         console.error('Supabase error:', error);
         throw error;
       }
+
+      console.log('Update successful:', data);
 
       toast({
         title: "Éxito",
@@ -327,7 +341,7 @@ const AdminRecursos = () => {
       console.error('Error updating flujo:', error);
       toast({
         title: "Error",
-        description: "No se pudo actualizar el flujo",
+        description: `No se pudo actualizar el flujo: ${error instanceof Error ? error.message : 'Error desconocido'}`,
         variant: "destructive"
       });
     }
