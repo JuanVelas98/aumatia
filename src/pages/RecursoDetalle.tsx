@@ -10,7 +10,7 @@ import { DownloadFormModal } from "@/components/DownloadFormModal";
 import { DynamicHeader } from "@/components/DynamicHeader";
 import { SEOHelmet } from "@/components/SEOHelmet";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Copy, Check, ExternalLink, FileText, Video, ChevronDown, ChevronUp, Info, Download } from "lucide-react";
+import { ArrowLeft, Copy, Check, ExternalLink, FileText, Video, ChevronDown, ChevronUp, Info, Download, Image as ImageIcon } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useEventTracking } from "@/hooks/useEventTracking";
 import { useScrollVisibility } from "@/hooks/useScrollVisibility";
@@ -58,6 +58,7 @@ const RecursoDetalle = () => {
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
   const [copiedSteps, setCopiedSteps] = useState<Set<number>>(new Set());
   const [openSteps, setOpenSteps] = useState<Set<number>>(new Set([0])); // Solo el primer paso abierto
+  const [imageError, setImageError] = useState(false);
   const { registrarEvento } = useEventTracking();
 
   // Refs para scroll visibility
@@ -258,6 +259,17 @@ const RecursoDetalle = () => {
     setShowDownloadFormModal(true);
   };
 
+  // Función para renderizar la descripción con saltos de línea
+  const renderDescription = (text: string | null) => {
+    if (!text) return null;
+    return text.split('\n').map((line, index) => (
+      <span key={index}>
+        {line}
+        {index < text.split('\n').length - 1 && <br />}
+      </span>
+    ));
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-blue-50 flex items-center justify-center">
@@ -322,10 +334,31 @@ const RecursoDetalle = () => {
               {titulo}
             </h1>
             
+            {/* Imagen del recurso */}
+            {recurso.imagen_url && !imageError ? (
+              <div className="mb-8 flex justify-center">
+                <img 
+                  src={recurso.imagen_url} 
+                  alt={titulo}
+                  className="max-w-full h-auto max-h-96 rounded-lg shadow-lg object-cover"
+                  onError={() => setImageError(true)}
+                />
+              </div>
+            ) : (
+              <div className="mb-8 flex justify-center">
+                <div className="w-full max-w-md h-48 bg-gray-100 rounded-lg shadow-lg flex items-center justify-center">
+                  <div className="text-center text-gray-500">
+                    <ImageIcon className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">Imagen no disponible</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             {descripcion && (
-              <p className="text-xl text-gray-600 mb-8 leading-relaxed">
-                {descripcion}
-              </p>
+              <div className="text-xl text-gray-600 mb-8 leading-relaxed text-left max-w-3xl mx-auto">
+                {renderDescription(descripcion)}
+              </div>
             )}
 
             {recurso.plataformas && recurso.plataformas.length > 0 && (
@@ -427,9 +460,9 @@ const RecursoDetalle = () => {
                         
                         <CollapsibleContent>
                           <CardContent className="space-y-4 pt-0">
-                            <CardDescription className="text-gray-600">
-                              {paso.descripcion}
-                            </CardDescription>
+                            <div className="text-gray-600 whitespace-pre-line leading-relaxed">
+                              {renderDescription(paso.descripcion)}
+                            </div>
 
                             {paso.codigo && (
                               <div>

@@ -67,12 +67,14 @@ export const StepEditor = ({ steps, onChange }: StepEditorProps) => {
                     <Label htmlFor={`step-desc-${index}`}>
                       Descripción del Paso *
                     </Label>
-                    <Input
+                    <Textarea
                       id={`step-desc-${index}`}
                       value={step.descripcion}
                       onChange={(e) => updateStep(index, "descripcion", e.target.value)}
-                      placeholder="Describe qué hace este paso..."
+                      placeholder="Describe qué hace este paso... (puedes usar saltos de línea para párrafos)"
                       required
+                      rows={3}
+                      className="resize-vertical"
                     />
                   </div>
 

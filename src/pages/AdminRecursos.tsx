@@ -168,8 +168,8 @@ const AdminRecursos = () => {
         descripcion: flujoForm.descripcion.trim() || null,
         imagen_url: flujoForm.imagen_url.trim() || null,
         link_descarga: flujoForm.link_descarga.trim() || null,
-        pasos: flujoForm.pasos as any,
-        plataformas: flujoForm.plataformas as any
+        pasos: JSON.stringify(flujoForm.pasos),
+        plataformas: JSON.stringify(flujoForm.plataformas)
       };
 
       const { error } = await supabase
@@ -255,13 +255,14 @@ const AdminRecursos = () => {
   };
 
   const handleEditFlujo = (flujo: Flujo) => {
+    console.log('Editing flujo:', flujo);
     setFlujoForm({
       nombre: flujo.nombre,
       descripcion: flujo.descripcion || '',
       imagen_url: flujo.imagen_url || '',
       link_descarga: flujo.link_descarga || '',
-      pasos: flujo.pasos || [],
-      plataformas: flujo.plataformas || []
+      pasos: Array.isArray(flujo.pasos) ? flujo.pasos : [],
+      plataformas: Array.isArray(flujo.plataformas) ? flujo.plataformas : []
     });
     setEditingFlujo(flujo);
     setShowCreateFlujo(true);
@@ -283,23 +284,34 @@ const AdminRecursos = () => {
     e.preventDefault();
     
     if (!editingFlujo || !flujoForm.nombre.trim()) {
+      toast({
+        title: "Error",
+        description: "Datos del flujo incompletos",
+        variant: "destructive"
+      });
       return;
     }
 
     try {
+      console.log('Updating flujo with ID:', editingFlujo.id);
+      console.log('Form data:', flujoForm);
+      
+      const updateData = {
+        nombre: flujoForm.nombre.trim(),
+        descripcion: flujoForm.descripcion.trim() || null,
+        imagen_url: flujoForm.imagen_url.trim() || null,
+        link_descarga: flujoForm.link_descarga.trim() || null,
+        pasos: JSON.stringify(flujoForm.pasos),
+        plataformas: JSON.stringify(flujoForm.plataformas)
+      };
+
       const { error } = await supabase
         .from('flujos')
-        .update({
-          nombre: flujoForm.nombre.trim(),
-          descripcion: flujoForm.descripcion.trim() || null,
-          imagen_url: flujoForm.imagen_url.trim() || null,
-          link_descarga: flujoForm.link_descarga.trim() || null,
-          pasos: flujoForm.pasos as any,
-          plataformas: flujoForm.plataformas as any
-        })
+        .update(updateData)
         .eq('id', editingFlujo.id);
 
       if (error) {
+        console.error('Supabase error:', error);
         throw error;
       }
 
