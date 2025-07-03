@@ -11,34 +11,55 @@ export type Database = {
     Tables: {
       descargas: {
         Row: {
+          actividad_proyecto: string | null
           celular: string
           correo: string
           creado_en: string | null
+          experiencia_nocode: string | null
           flujo: string
+          frustracion_ia: string | null
           id: string
-          interes: string | null
           nombre: string
-          pais_codigo: string
+          pais: string | null
+          quiere_recursos: Json | null
+          situacion_actual: Json | null
+          situacion_otra: string | null
+          tarea_automatizar: string | null
+          whatsapp: string | null
         }
         Insert: {
+          actividad_proyecto?: string | null
           celular: string
           correo: string
           creado_en?: string | null
+          experiencia_nocode?: string | null
           flujo: string
+          frustracion_ia?: string | null
           id?: string
-          interes?: string | null
           nombre: string
-          pais_codigo: string
+          pais?: string | null
+          quiere_recursos?: Json | null
+          situacion_actual?: Json | null
+          situacion_otra?: string | null
+          tarea_automatizar?: string | null
+          whatsapp?: string | null
         }
         Update: {
+          actividad_proyecto?: string | null
           celular?: string
           correo?: string
           creado_en?: string | null
+          experiencia_nocode?: string | null
           flujo?: string
+          frustracion_ia?: string | null
           id?: string
-          interes?: string | null
           nombre?: string
-          pais_codigo?: string
+          pais?: string | null
+          quiere_recursos?: Json | null
+          situacion_actual?: Json | null
+          situacion_otra?: string | null
+          tarea_automatizar?: string | null
+          whatsapp?: string | null
         }
         Relationships: []
       }
