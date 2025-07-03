@@ -215,8 +215,8 @@ const AdminRecursos = () => {
         descripcion: flujoForm.descripcion.trim() || null,
         imagen_url: flujoForm.imagen_url.trim() || null,
         link_descarga: flujoForm.link_descarga.trim() || null,
-        pasos: flujoForm.pasos.length > 0 ? flujoForm.pasos : null,
-        plataformas: flujoForm.plataformas.length > 0 ? flujoForm.plataformas : null
+        pasos: flujoForm.pasos.length > 0 ? JSON.parse(JSON.stringify(flujoForm.pasos)) : null,
+        plataformas: flujoForm.plataformas.length > 0 ? JSON.parse(JSON.stringify(flujoForm.plataformas)) : null
       };
 
       console.log('Sending flujo data to Supabase:', flujoData);
@@ -272,7 +272,7 @@ const AdminRecursos = () => {
         descripcion: tutorialForm.descripcion.trim() || null,
         imagen_url: tutorialForm.imagen_url.trim() || null,
         video_url: tutorialForm.video_url.trim(),
-        plataformas: tutorialForm.plataformas.length > 0 ? tutorialForm.plataformas : null
+        plataformas: tutorialForm.plataformas.length > 0 ? JSON.parse(JSON.stringify(tutorialForm.plataformas)) : null
       };
 
       console.log('Sending tutorial data to Supabase:', tutorialData);
@@ -366,8 +366,8 @@ const AdminRecursos = () => {
         descripcion: flujoForm.descripcion.trim() || null,
         imagen_url: flujoForm.imagen_url.trim() || null,
         link_descarga: flujoForm.link_descarga.trim() || null,
-        pasos: flujoForm.pasos.length > 0 ? flujoForm.pasos : null,
-        plataformas: flujoForm.plataformas.length > 0 ? flujoForm.plataformas : null
+        pasos: flujoForm.pasos.length > 0 ? JSON.parse(JSON.stringify(flujoForm.pasos)) : null,
+        plataformas: flujoForm.plataformas.length > 0 ? JSON.parse(JSON.stringify(flujoForm.plataformas)) : null
       };
 
       console.log('Sending update data to Supabase:', updateData);
@@ -435,7 +435,7 @@ const AdminRecursos = () => {
         descripcion: tutorialForm.descripcion.trim() || null,
         imagen_url: tutorialForm.imagen_url.trim() || null,
         video_url: tutorialForm.video_url.trim() || null,
-        plataformas: tutorialForm.plataformas.length > 0 ? tutorialForm.plataformas : null
+        plataformas: tutorialForm.plataformas.length > 0 ? JSON.parse(JSON.stringify(tutorialForm.plataformas)) : null
       };
 
       console.log('Sending update data to Supabase:', updateData);
