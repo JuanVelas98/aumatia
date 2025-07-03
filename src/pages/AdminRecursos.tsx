@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,9 +20,11 @@ import {
   FileText,
   Video,
   ExternalLink,
-  BarChart3
+  BarChart3,
+  Download
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from "docx";
 
 interface Platform {
   nombre: string;
@@ -451,6 +452,221 @@ const AdminRecursos = () => {
     }
   };
 
+  const generateWordDocument = async (flujo: Flujo) => {
+    try {
+      const doc = new Document({
+        sections: [
+          {
+            properties: {},
+            children: [
+              // Title
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: flujo.nombre,
+                    bold: true,
+                    size: 32,
+                  }),
+                ],
+                heading: HeadingLevel.TITLE,
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 400 },
+              }),
+              
+              // Generation date
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `Generado el: ${new Date().toLocaleDateString('es-ES')}`,
+                    italics: true,
+                    size: 20,
+                  }),
+                ],
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 600 },
+              }),
+
+              // Description section
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "Descripción",
+                    bold: true,
+                    size: 24,
+                  }),
+                ],
+                heading: HeadingLevel.HEADING_1,
+                spacing: { before: 400, after: 200 },
+              }),
+
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: flujo.descripcion || "Sin descripción disponible",
+                    size: 22,
+                  }),
+                ],
+                spacing: { after: 400 },
+              }),
+
+              // Platforms section
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "Plataformas Compatibles",
+                    bold: true,
+                    size: 24,
+                  }),
+                ],
+                heading: HeadingLevel.HEADING_1,
+                spacing: { before: 400, after: 200 },
+              }),
+
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: flujo.plataformas?.length > 0 
+                      ? flujo.plataformas.map(p => `• ${p.nombre}`).join('\n')
+                      : "• No se especificaron plataformas",
+                    size: 22,
+                  }),
+                ],
+                spacing: { after: 400 },
+              }),
+
+              // Download link section
+              ...(flujo.link_descarga ? [
+                new Paragraph({
+                  children: [
+                    new TextRun({
+                      text: "Enlace de Descarga",
+                      bold: true,
+                      size: 24,
+                    }),
+                  ],
+                  heading: HeadingLevel.HEADING_1,
+                  spacing: { before: 400, after: 200 },
+                }),
+                new Paragraph({
+                  children: [
+                    new TextRun({
+                      text: flujo.link_descarga,
+                      size: 22,
+                      color: "0000FF",
+                    }),
+                  ],
+                  spacing: { after: 400 },
+                }),
+              ] : []),
+
+              // Steps section
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "Pasos del Flujo",
+                    bold: true,
+                    size: 24,
+                  }),
+                ],
+                heading: HeadingLevel.HEADING_1,
+                spacing: { before: 400, after: 200 },
+              }),
+
+              // Generate steps
+              ...(flujo.pasos?.flatMap((paso, index) => [
+                new Paragraph({
+                  children: [
+                    new TextRun({
+                      text: `Paso ${index + 1}`,
+                      bold: true,
+                      size: 22,
+                    }),
+                  ],
+                  heading: HeadingLevel.HEADING_2,
+                  spacing: { before: 300, after: 150 },
+                }),
+                
+                new Paragraph({
+                  children: [
+                    new TextRun({
+                      text: paso.descripcion || "Sin descripción",
+                      size: 22,
+                    }),
+                  ],
+                  spacing: { after: 200 },
+                }),
+
+                ...(paso.codigo ? [
+                  new Paragraph({
+                    children: [
+                      new TextRun({
+                        text: "Código:",
+                        bold: true,
+                        size: 20,
+                      }),
+                    ],
+                    spacing: { after: 100 },
+                  }),
+                  new Paragraph({
+                    children: [
+                      new TextRun({
+                        text: paso.codigo,
+                        size: 20,
+                        font: "Courier New",
+                      }),
+                    ],
+                    spacing: { after: 200 },
+                  }),
+                ] : []),
+
+                ...(paso.videoUrl ? [
+                  new Paragraph({
+                    children: [
+                      new TextRun({
+                        text: "Video de referencia: ",
+                        bold: true,
+                        size: 20,
+                      }),
+                      new TextRun({
+                        text: paso.videoUrl,
+                        size: 20,
+                        color: "0000FF",
+                      }),
+                    ],
+                    spacing: { after: 300 },
+                  }),
+                ] : []),
+              ]) || []),
+            ],
+          },
+        ],
+      });
+
+      // Generate and download the document
+      const blob = await Packer.toBlob(doc);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `flujo-${flujo.nombre.toLowerCase().replace(/\s+/g, '-')}-pasos.docx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: "Descarga completada",
+        description: `El documento "${flujo.nombre}" se ha descargado correctamente`,
+      });
+    } catch (error) {
+      console.error('Error generating Word document:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo generar el documento Word",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
       <div className="max-w-7xl mx-auto">
@@ -643,6 +859,14 @@ const AdminRecursos = () => {
                                   <ExternalLink className="w-4 h-4" />
                                 </Button>
                               </Link>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => generateWordDocument(flujo)}
+                                title="Descargar pasos en Word"
+                              >
+                                <Download className="w-4 h-4" />
+                              </Button>
                               <Button 
                                 variant="outline" 
                                 size="sm"
