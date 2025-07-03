@@ -46,6 +46,7 @@ interface Flujo {
   pasos: Paso[];
   plataformas: Platform[];
   creado_en: string | null;
+  actualizado_en: string | null;
 }
 
 interface Tutorial {
@@ -56,6 +57,7 @@ interface Tutorial {
   video_url: string | null;
   plataformas: Platform[];
   creado_en: string | null;
+  actualizado_en: string | null;
 }
 
 const AdminRecursos = () => {
@@ -228,7 +230,14 @@ const AdminRecursos = () => {
 
       if (error) {
         console.error('Supabase error creating flujo:', error);
-        throw new Error(`Error de base de datos: ${error.message}`);
+        let errorMessage = `Error de base de datos: ${error.message}`;
+        if (error.details) {
+          errorMessage += ` - Detalles: ${error.details}`;
+        }
+        if (error.hint) {
+          errorMessage += ` - Sugerencia: ${error.hint}`;
+        }
+        throw new Error(errorMessage);
       }
 
       console.log('Flujo created successfully:', data);
@@ -284,7 +293,14 @@ const AdminRecursos = () => {
 
       if (error) {
         console.error('Supabase error creating tutorial:', error);
-        throw new Error(`Error de base de datos: ${error.message}`);
+        let errorMessage = `Error de base de datos: ${error.message}`;
+        if (error.details) {
+          errorMessage += ` - Detalles: ${error.details}`;
+        }
+        if (error.hint) {
+          errorMessage += ` - Sugerencia: ${error.hint}`;
+        }
+        throw new Error(errorMessage);
       }
 
       console.log('Tutorial created successfully:', data);
@@ -380,7 +396,14 @@ const AdminRecursos = () => {
 
       if (error) {
         console.error('Supabase error updating flujo:', error);
-        throw new Error(`Error de base de datos: ${error.message}`);
+        let errorMessage = `Error de base de datos: ${error.message}`;
+        if (error.details) {
+          errorMessage += ` - Detalles: ${error.details}`;
+        }
+        if (error.hint) {
+          errorMessage += ` - Sugerencia: ${error.hint}`;
+        }
+        throw new Error(errorMessage);
       }
 
       console.log('Flujo updated successfully:', data);
@@ -448,7 +471,14 @@ const AdminRecursos = () => {
 
       if (error) {
         console.error('Supabase error updating tutorial:', error);
-        throw new Error(`Error de base de datos: ${error.message}`);
+        let errorMessage = `Error de base de datos: ${error.message}`;
+        if (error.details) {
+          errorMessage += ` - Detalles: ${error.details}`;
+        }
+        if (error.hint) {
+          errorMessage += ` - Sugerencia: ${error.hint}`;
+        }
+        throw new Error(errorMessage);
       }
 
       console.log('Tutorial updated successfully:', data);
