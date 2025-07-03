@@ -99,6 +99,11 @@ const AdminRecursos = () => {
 
       if (flujosResponse.error) {
         console.error('Error fetching flujos:', flujosResponse.error);
+        toast({
+          title: "Error",
+          description: `Error al cargar flujos: ${flujosResponse.error.message}`,
+          variant: "destructive"
+        });
       } else {
         const processedFlujos = flujosResponse.data.map(flujo => ({
           ...flujo,
@@ -110,6 +115,11 @@ const AdminRecursos = () => {
 
       if (tutorialesResponse.error) {
         console.error('Error fetching tutoriales:', tutorialesResponse.error);
+        toast({
+          title: "Error", 
+          description: `Error al cargar tutoriales: ${tutorialesResponse.error.message}`,
+          variant: "destructive"
+        });
       } else {
         const processedTutoriales = tutorialesResponse.data.map(tutorial => ({
           ...tutorial,
@@ -152,13 +162,48 @@ const AdminRecursos = () => {
     setEditingTutorial(null);
   };
 
+  const validateFlujoForm = () => {
+    const errors = [];
+    
+    if (!flujoForm.nombre.trim()) {
+      errors.push("El nombre del flujo es requerido");
+    }
+    
+    if (flujoForm.pasos.length > 0) {
+      flujoForm.pasos.forEach((paso, index) => {
+        if (!paso.descripcion.trim()) {
+          errors.push(`La descripción del paso ${index + 1} es requerida`);
+        }
+      });
+    }
+    
+    return errors;
+  };
+
+  const validateTutorialForm = () => {
+    const errors = [];
+    
+    if (!tutorialForm.titulo.trim()) {
+      errors.push("El título del tutorial es requerido");
+    }
+    
+    if (!tutorialForm.video_url.trim()) {
+      errors.push("La URL del video es requerida");
+    }
+    
+    return errors;
+  };
+
   const handleCreateFlujo = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!flujoForm.nombre.trim()) {
+    console.log('Creating flujo with form data:', flujoForm);
+    
+    const validationErrors = validateFlujoForm();
+    if (validationErrors.length > 0) {
       toast({
-        title: "Error",
-        description: "El nombre del flujo es requerido",
+        title: "Error de validación",
+        description: validationErrors.join(", "),
         variant: "destructive"
       });
       return;
@@ -170,17 +215,23 @@ const AdminRecursos = () => {
         descripcion: flujoForm.descripcion.trim() || null,
         imagen_url: flujoForm.imagen_url.trim() || null,
         link_descarga: flujoForm.link_descarga.trim() || null,
-        pasos: flujoForm.pasos as any,
-        plataformas: flujoForm.plataformas as any
+        pasos: flujoForm.pasos.length > 0 ? flujoForm.pasos : null,
+        plataformas: flujoForm.plataformas.length > 0 ? flujoForm.plataformas : null
       };
 
-      const { error } = await supabase
+      console.log('Sending flujo data to Supabase:', flujoData);
+
+      const { data, error } = await supabase
         .from('flujos')
-        .insert(flujoData);
+        .insert(flujoData)
+        .select();
 
       if (error) {
-        throw error;
+        console.error('Supabase error creating flujo:', error);
+        throw new Error(`Error de base de datos: ${error.message}`);
       }
+
+      console.log('Flujo created successfully:', data);
 
       toast({
         title: "Éxito",
@@ -194,7 +245,7 @@ const AdminRecursos = () => {
       console.error('Error creating flujo:', error);
       toast({
         title: "Error",
-        description: "No se pudo crear el flujo",
+        description: error instanceof Error ? error.message : "No se pudo crear el flujo",
         variant: "destructive"
       });
     }
@@ -203,19 +254,13 @@ const AdminRecursos = () => {
   const handleCreateTutorial = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!tutorialForm.titulo.trim()) {
+    console.log('Creating tutorial with form data:', tutorialForm);
+    
+    const validationErrors = validateTutorialForm();
+    if (validationErrors.length > 0) {
       toast({
-        title: "Error",
-        description: "El título del tutorial es requerido",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (!tutorialForm.video_url.trim()) {
-      toast({
-        title: "Error",
-        description: "La URL del video es requerida",
+        title: "Error de validación",
+        description: validationErrors.join(", "),
         variant: "destructive"
       });
       return;
@@ -227,16 +272,22 @@ const AdminRecursos = () => {
         descripcion: tutorialForm.descripcion.trim() || null,
         imagen_url: tutorialForm.imagen_url.trim() || null,
         video_url: tutorialForm.video_url.trim(),
-        plataformas: tutorialForm.plataformas as any
+        plataformas: tutorialForm.plataformas.length > 0 ? tutorialForm.plataformas : null
       };
 
-      const { error } = await supabase
+      console.log('Sending tutorial data to Supabase:', tutorialData);
+
+      const { data, error } = await supabase
         .from('tutoriales')
-        .insert(tutorialData);
+        .insert(tutorialData)
+        .select();
 
       if (error) {
-        throw error;
+        console.error('Supabase error creating tutorial:', error);
+        throw new Error(`Error de base de datos: ${error.message}`);
       }
+
+      console.log('Tutorial created successfully:', data);
 
       toast({
         title: "Éxito",
@@ -250,7 +301,7 @@ const AdminRecursos = () => {
       console.error('Error creating tutorial:', error);
       toast({
         title: "Error",
-        description: "No se pudo crear el tutorial",
+        description: error instanceof Error ? error.message : "No se pudo crear el tutorial",
         variant: "destructive"
       });
     }
@@ -271,6 +322,7 @@ const AdminRecursos = () => {
   };
 
   const handleEditTutorial = (tutorial: Tutorial) => {
+    console.log('Editing tutorial:', tutorial);
     setTutorialForm({
       titulo: tutorial.titulo,
       descripcion: tutorial.descripcion || '',
@@ -286,6 +338,7 @@ const AdminRecursos = () => {
     e.preventDefault();
     
     if (!editingFlujo) {
+      console.error('No flujo being edited');
       toast({
         title: "Error",
         description: "No se encontró el flujo a actualizar",
@@ -294,29 +347,30 @@ const AdminRecursos = () => {
       return;
     }
 
-    if (!flujoForm.nombre.trim()) {
+    console.log('Updating flujo with ID:', editingFlujo.id);
+    console.log('Form data:', flujoForm);
+
+    const validationErrors = validateFlujoForm();
+    if (validationErrors.length > 0) {
       toast({
-        title: "Error",
-        description: "El nombre del flujo es requerido",
+        title: "Error de validación",
+        description: validationErrors.join(", "),
         variant: "destructive"
       });
       return;
     }
 
     try {
-      console.log('Updating flujo with ID:', editingFlujo.id);
-      console.log('Form data:', flujoForm);
-      
       const updateData = {
         nombre: flujoForm.nombre.trim(),
         descripcion: flujoForm.descripcion.trim() || null,
         imagen_url: flujoForm.imagen_url.trim() || null,
         link_descarga: flujoForm.link_descarga.trim() || null,
-        pasos: flujoForm.pasos as any,
-        plataformas: flujoForm.plataformas as any
+        pasos: flujoForm.pasos.length > 0 ? flujoForm.pasos : null,
+        plataformas: flujoForm.plataformas.length > 0 ? flujoForm.plataformas : null
       };
 
-      console.log('Update data to be sent:', updateData);
+      console.log('Sending update data to Supabase:', updateData);
 
       const { data, error } = await supabase
         .from('flujos')
@@ -325,11 +379,11 @@ const AdminRecursos = () => {
         .select();
 
       if (error) {
-        console.error('Supabase error:', error);
-        throw error;
+        console.error('Supabase error updating flujo:', error);
+        throw new Error(`Error de base de datos: ${error.message}`);
       }
 
-      console.log('Update successful:', data);
+      console.log('Flujo updated successfully:', data);
 
       toast({
         title: "Éxito",
@@ -343,7 +397,7 @@ const AdminRecursos = () => {
       console.error('Error updating flujo:', error);
       toast({
         title: "Error",
-        description: `No se pudo actualizar el flujo: ${error instanceof Error ? error.message : 'Error desconocido'}`,
+        description: error instanceof Error ? error.message : "No se pudo actualizar el flujo",
         variant: "destructive"
       });
     }
@@ -352,25 +406,52 @@ const AdminRecursos = () => {
   const handleUpdateTutorial = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!editingTutorial || !tutorialForm.titulo.trim()) {
+    if (!editingTutorial) {
+      console.error('No tutorial being edited');
+      toast({
+        title: "Error",
+        description: "No se encontró el tutorial a actualizar",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    console.log('Updating tutorial with ID:', editingTutorial.id);
+    console.log('Form data:', tutorialForm);
+
+    const validationErrors = validateTutorialForm();
+    if (validationErrors.length > 0) {
+      toast({
+        title: "Error de validación",
+        description: validationErrors.join(", "),
+        variant: "destructive"
+      });
       return;
     }
 
     try {
-      const { error } = await supabase
+      const updateData = {
+        titulo: tutorialForm.titulo.trim(),
+        descripcion: tutorialForm.descripcion.trim() || null,
+        imagen_url: tutorialForm.imagen_url.trim() || null,
+        video_url: tutorialForm.video_url.trim() || null,
+        plataformas: tutorialForm.plataformas.length > 0 ? tutorialForm.plataformas : null
+      };
+
+      console.log('Sending update data to Supabase:', updateData);
+
+      const { data, error } = await supabase
         .from('tutoriales')
-        .update({
-          titulo: tutorialForm.titulo.trim(),
-          descripcion: tutorialForm.descripcion.trim() || null,
-          imagen_url: tutorialForm.imagen_url.trim() || null,
-          video_url: tutorialForm.video_url.trim() || null,
-          plataformas: tutorialForm.plataformas as any
-        })
-        .eq('id', editingTutorial.id);
+        .update(updateData)
+        .eq('id', editingTutorial.id)
+        .select();
 
       if (error) {
-        throw error;
+        console.error('Supabase error updating tutorial:', error);
+        throw new Error(`Error de base de datos: ${error.message}`);
       }
+
+      console.log('Tutorial updated successfully:', data);
 
       toast({
         title: "Éxito",
@@ -384,7 +465,7 @@ const AdminRecursos = () => {
       console.error('Error updating tutorial:', error);
       toast({
         title: "Error",
-        description: "No se pudo actualizar el tutorial",
+        description: error instanceof Error ? error.message : "No se pudo actualizar el tutorial",
         variant: "destructive"
       });
     }
@@ -459,7 +540,6 @@ const AdminRecursos = () => {
           {
             properties: {},
             children: [
-              // Title
               new Paragraph({
                 children: [
                   new TextRun({
@@ -472,8 +552,6 @@ const AdminRecursos = () => {
                 alignment: AlignmentType.CENTER,
                 spacing: { after: 400 },
               }),
-              
-              // Generation date
               new Paragraph({
                 children: [
                   new TextRun({
@@ -485,8 +563,6 @@ const AdminRecursos = () => {
                 alignment: AlignmentType.CENTER,
                 spacing: { after: 600 },
               }),
-
-              // Description section
               new Paragraph({
                 children: [
                   new TextRun({
@@ -498,7 +574,6 @@ const AdminRecursos = () => {
                 heading: HeadingLevel.HEADING_1,
                 spacing: { before: 400, after: 200 },
               }),
-
               new Paragraph({
                 children: [
                   new TextRun({
@@ -508,8 +583,6 @@ const AdminRecursos = () => {
                 ],
                 spacing: { after: 400 },
               }),
-
-              // Platforms section
               new Paragraph({
                 children: [
                   new TextRun({
@@ -521,7 +594,6 @@ const AdminRecursos = () => {
                 heading: HeadingLevel.HEADING_1,
                 spacing: { before: 400, after: 200 },
               }),
-
               new Paragraph({
                 children: [
                   new TextRun({
@@ -533,8 +605,6 @@ const AdminRecursos = () => {
                 ],
                 spacing: { after: 400 },
               }),
-
-              // Download link section
               ...(flujo.link_descarga ? [
                 new Paragraph({
                   children: [
@@ -558,8 +628,6 @@ const AdminRecursos = () => {
                   spacing: { after: 400 },
                 }),
               ] : []),
-
-              // Steps section
               new Paragraph({
                 children: [
                   new TextRun({
@@ -571,8 +639,6 @@ const AdminRecursos = () => {
                 heading: HeadingLevel.HEADING_1,
                 spacing: { before: 400, after: 200 },
               }),
-
-              // Generate steps
               ...(flujo.pasos?.flatMap((paso, index) => [
                 new Paragraph({
                   children: [
@@ -585,7 +651,6 @@ const AdminRecursos = () => {
                   heading: HeadingLevel.HEADING_2,
                   spacing: { before: 300, after: 150 },
                 }),
-                
                 new Paragraph({
                   children: [
                     new TextRun({
@@ -595,7 +660,6 @@ const AdminRecursos = () => {
                   ],
                   spacing: { after: 200 },
                 }),
-
                 ...(paso.codigo ? [
                   new Paragraph({
                     children: [
@@ -618,7 +682,6 @@ const AdminRecursos = () => {
                     spacing: { after: 200 },
                   }),
                 ] : []),
-
                 ...(paso.videoUrl ? [
                   new Paragraph({
                     children: [
@@ -642,7 +705,6 @@ const AdminRecursos = () => {
         ],
       });
 
-      // Generate and download the document
       const blob = await Packer.toBlob(doc);
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -670,14 +732,11 @@ const AdminRecursos = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Panel de Administración</h1>
             <p className="text-gray-600 mt-2">Gestiona flujos y tutoriales de Aumatia</p>
           </div>
-          
-          {/* Navigation buttons */}
           <div className="flex gap-3">
             <Link to="/admin_metrica">
               <Button className="bg-aumatia-blue hover:bg-aumatia-dark text-white">
@@ -694,7 +753,6 @@ const AdminRecursos = () => {
           </div>
         </div>
 
-        {/* Content */}
         <Tabs defaultValue="flujos" className="space-y-6">
           <TabsList className="grid w-full grid-cols-2 max-w-md">
             <TabsTrigger value="flujos" className="flex items-center gap-2">
@@ -707,7 +765,6 @@ const AdminRecursos = () => {
             </TabsTrigger>
           </TabsList>
 
-          
           <TabsContent value="flujos" className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-semibold text-gray-900">Gestión de Flujos</h2>

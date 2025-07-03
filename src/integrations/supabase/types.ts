@@ -12,7 +12,6 @@ export type Database = {
       descargas: {
         Row: {
           actividad_proyecto: string | null
-          celular: string
           correo: string
           creado_en: string | null
           experiencia_nocode: string | null
@@ -29,7 +28,6 @@ export type Database = {
         }
         Insert: {
           actividad_proyecto?: string | null
-          celular: string
           correo: string
           creado_en?: string | null
           experiencia_nocode?: string | null
@@ -46,7 +44,6 @@ export type Database = {
         }
         Update: {
           actividad_proyecto?: string | null
-          celular?: string
           correo?: string
           creado_en?: string | null
           experiencia_nocode?: string | null
