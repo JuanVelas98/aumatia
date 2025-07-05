@@ -47,6 +47,20 @@ interface Tutorial {
   creado_en: string | null;
 }
 
+// Type guards to safely check if data matches our interfaces
+const isPaso = (obj: any): obj is Paso => {
+  return obj && 
+         typeof obj.descripcion === 'string' && 
+         typeof obj.codigo === 'string' && 
+         typeof obj.videoUrl === 'string';
+};
+
+const isPlatform = (obj: any): obj is Platform => {
+  return obj && 
+         typeof obj.nombre === 'string' && 
+         typeof obj.link === 'string';
+};
+
 const RecursoDetalle = () => {
   const [searchParams] = useSearchParams();
   const id = searchParams.get('id');
@@ -121,11 +135,24 @@ const RecursoDetalle = () => {
         if (data) {
           console.log('📄 Raw tutorial data:', data);
           
+          // Procesar plataformas para tutoriales
+          let processedPlataformas: Platform[] = [];
+          if (Array.isArray(data.plataformas)) {
+            processedPlataformas = (data.plataformas as unknown[]).filter(isPlatform);
+          } else if (data.plataformas && typeof data.plataformas === 'string') {
+            try {
+              const parsed = JSON.parse(data.plataformas);
+              if (Array.isArray(parsed)) {
+                processedPlataformas = parsed.filter(isPlatform);
+              }
+            } catch (e) {
+              console.error('Error parsing tutorial plataformas:', e);
+            }
+          }
+          
           const processedData: Tutorial = {
             ...data,
-            plataformas: Array.isArray(data.plataformas) 
-              ? data.plataformas as unknown as Platform[]
-              : (data.plataformas ? JSON.parse(String(data.plataformas)) as Platform[] : [])
+            plataformas: processedPlataformas
           };
           
           console.log('✅ Processed tutorial data:', processedData);
@@ -149,44 +176,53 @@ const RecursoDetalle = () => {
           console.log('🔍 Raw pasos data:', data.pasos);
           console.log('🔍 Is pasos array?', Array.isArray(data.pasos));
           
-          // Simplificar el procesamiento de pasos
+          // Procesar pasos con verificación de tipos
           let processedPasos: Paso[] = [];
           
           if (Array.isArray(data.pasos)) {
-            processedPasos = data.pasos as Paso[];
-            console.log('✅ Pasos are already an array:', processedPasos);
+            console.log('✅ Processing pasos as array');
+            processedPasos = (data.pasos as unknown[]).filter(isPaso);
+            console.log('✅ Filtered pasos:', processedPasos);
           } else if (data.pasos && typeof data.pasos === 'string') {
+            console.log('✅ Processing pasos as string');
             try {
-              processedPasos = JSON.parse(data.pasos) as Paso[];
-              console.log('✅ Parsed pasos from string:', processedPasos);
+              const parsed = JSON.parse(data.pasos);
+              if (Array.isArray(parsed)) {
+                processedPasos = parsed.filter(isPaso);
+              }
+              console.log('✅ Parsed and filtered pasos:', processedPasos);
             } catch (parseError) {
               console.error('❌ Error parsing pasos string:', parseError);
-              processedPasos = [];
             }
           } else if (data.pasos && typeof data.pasos === 'object') {
-            processedPasos = data.pasos as Paso[];
-            console.log('✅ Using pasos as object:', processedPasos);
-          } else {
-            console.log('⚠️ No valid pasos found, using empty array');
-            processedPasos = [];
+            console.log('✅ Processing pasos as object');
+            // If it's an object but not an array, try to convert it
+            const pasosArray = Object.values(data.pasos as object);
+            if (Array.isArray(pasosArray)) {
+              processedPasos = pasosArray.filter(isPaso);
+            }
+            console.log('✅ Object converted pasos:', processedPasos);
           }
 
-          // Procesar plataformas de manera similar
+          // Procesar plataformas con verificación de tipos
           let processedPlataformas: Platform[] = [];
           
           if (Array.isArray(data.plataformas)) {
-            processedPlataformas = data.plataformas as Platform[];
+            processedPlataformas = (data.plataformas as unknown[]).filter(isPlatform);
           } else if (data.plataformas && typeof data.plataformas === 'string') {
             try {
-              processedPlataformas = JSON.parse(data.plataformas) as Platform[];
+              const parsed = JSON.parse(data.plataformas);
+              if (Array.isArray(parsed)) {
+                processedPlataformas = parsed.filter(isPlatform);
+              }
             } catch (parseError) {
               console.error('❌ Error parsing plataformas string:', parseError);
-              processedPlataformas = [];
             }
           } else if (data.plataformas && typeof data.plataformas === 'object') {
-            processedPlataformas = data.plataformas as Platform[];
-          } else {
-            processedPlataformas = [];
+            const plataformasArray = Object.values(data.plataformas as object);
+            if (Array.isArray(plataformasArray)) {
+              processedPlataformas = plataformasArray.filter(isPlatform);
+            }
           }
           
           const processedData: Flujo = {
@@ -197,6 +233,7 @@ const RecursoDetalle = () => {
           
           console.log('✅ Final processed flujo data:', processedData);
           console.log('📊 Number of steps processed:', processedPasos.length);
+          console.log('📊 Number of platforms processed:', processedPlataformas.length);
           
           setRecurso(processedData);
         }
@@ -442,6 +479,7 @@ const RecursoDetalle = () => {
                     <p>• Cantidad de pasos: {(recurso as Flujo).pasos?.length || 0}</p>
                     <p>• Tipo de pasos: {typeof (recurso as Flujo).pasos}</p>
                     <p>• Es array: {Array.isArray((recurso as Flujo).pasos) ? 'Sí' : 'No'}</p>
+                    <p>• Pasos válidos: {(recurso as Flujo).pasos?.filter(isPaso).length || 0}</p>
                   </div>
                 </CardContent>
               </Card>
