@@ -63,6 +63,7 @@ const Recursos = () => {
       const { data, error } = await supabase
         .from('flujos')
         .select('*')
+        .eq('visible', true) // Solo obtener flujos visibles
         .order('creado_en', { ascending: false });
       
       if (error) {

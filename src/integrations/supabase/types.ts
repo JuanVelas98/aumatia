@@ -110,6 +110,7 @@ export type Database = {
           nombre: string
           pasos: Json | null
           plataformas: Json | null
+          visible: boolean
         }
         Insert: {
           actualizado_en?: string | null
@@ -121,6 +122,7 @@ export type Database = {
           nombre: string
           pasos?: Json | null
           plataformas?: Json | null
+          visible?: boolean
         }
         Update: {
           actualizado_en?: string | null
@@ -132,6 +134,7 @@ export type Database = {
           nombre?: string
           pasos?: Json | null
           plataformas?: Json | null
+          visible?: boolean
         }
         Relationships: []
       }
