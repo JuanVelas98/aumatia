@@ -104,6 +104,8 @@ const RecursoDetalle = () => {
     try {
       setLoading(true);
       
+      console.log('🔍 Fetching recurso with ID:', id, 'and type:', tipo);
+      
       if (tipo === 'tutorial') {
         const { data, error } = await supabase
           .from('tutoriales')
@@ -112,17 +114,21 @@ const RecursoDetalle = () => {
           .single();
 
         if (error) {
-          console.error('Error fetching tutorial:', error);
+          console.error('❌ Error fetching tutorial:', error);
           return;
         }
 
         if (data) {
+          console.log('📄 Raw tutorial data:', data);
+          
           const processedData: Tutorial = {
             ...data,
             plataformas: Array.isArray(data.plataformas) 
               ? data.plataformas as unknown as Platform[]
               : (data.plataformas ? JSON.parse(String(data.plataformas)) as Platform[] : [])
           };
+          
+          console.log('✅ Processed tutorial data:', processedData);
           setRecurso(processedData);
         }
       } else {
@@ -133,25 +139,70 @@ const RecursoDetalle = () => {
           .single();
 
         if (error) {
-          console.error('Error fetching flujo:', error);
+          console.error('❌ Error fetching flujo:', error);
           return;
         }
 
         if (data) {
+          console.log('📄 Raw flujo data:', data);
+          console.log('🔍 Raw pasos data type:', typeof data.pasos);
+          console.log('🔍 Raw pasos data:', data.pasos);
+          console.log('🔍 Is pasos array?', Array.isArray(data.pasos));
+          
+          // Simplificar el procesamiento de pasos
+          let processedPasos: Paso[] = [];
+          
+          if (Array.isArray(data.pasos)) {
+            processedPasos = data.pasos as Paso[];
+            console.log('✅ Pasos are already an array:', processedPasos);
+          } else if (data.pasos && typeof data.pasos === 'string') {
+            try {
+              processedPasos = JSON.parse(data.pasos) as Paso[];
+              console.log('✅ Parsed pasos from string:', processedPasos);
+            } catch (parseError) {
+              console.error('❌ Error parsing pasos string:', parseError);
+              processedPasos = [];
+            }
+          } else if (data.pasos && typeof data.pasos === 'object') {
+            processedPasos = data.pasos as Paso[];
+            console.log('✅ Using pasos as object:', processedPasos);
+          } else {
+            console.log('⚠️ No valid pasos found, using empty array');
+            processedPasos = [];
+          }
+
+          // Procesar plataformas de manera similar
+          let processedPlataformas: Platform[] = [];
+          
+          if (Array.isArray(data.plataformas)) {
+            processedPlataformas = data.plataformas as Platform[];
+          } else if (data.plataformas && typeof data.plataformas === 'string') {
+            try {
+              processedPlataformas = JSON.parse(data.plataformas) as Platform[];
+            } catch (parseError) {
+              console.error('❌ Error parsing plataformas string:', parseError);
+              processedPlataformas = [];
+            }
+          } else if (data.plataformas && typeof data.plataformas === 'object') {
+            processedPlataformas = data.plataformas as Platform[];
+          } else {
+            processedPlataformas = [];
+          }
+          
           const processedData: Flujo = {
             ...data,
-            pasos: Array.isArray(data.pasos) 
-              ? data.pasos as unknown as Paso[]
-              : (data.pasos ? JSON.parse(String(data.pasos)) as Paso[] : []),
-            plataformas: Array.isArray(data.plataformas) 
-              ? data.plataformas as unknown as Platform[]
-              : (data.plataformas ? JSON.parse(String(data.plataformas)) as Platform[] : [])
+            pasos: processedPasos,
+            plataformas: processedPlataformas
           };
+          
+          console.log('✅ Final processed flujo data:', processedData);
+          console.log('📊 Number of steps processed:', processedPasos.length);
+          
           setRecurso(processedData);
         }
       }
     } catch (error) {
-      console.error('Error general:', error);
+      console.error('❌ Error general:', error);
     } finally {
       setLoading(false);
     }
@@ -301,6 +352,13 @@ const RecursoDetalle = () => {
   const titulo = isFlujo ? (recurso as Flujo).nombre : (recurso as Tutorial).titulo;
   const descripcion = recurso.descripcion;
 
+  // Debug logging para verificar el estado final
+  console.log('🎯 Final render state:');
+  console.log('- isFlujo:', isFlujo);
+  console.log('- recurso:', recurso);
+  console.log('- pasos available:', isFlujo && (recurso as Flujo).pasos);
+  console.log('- pasos length:', isFlujo ? (recurso as Flujo).pasos?.length : 'N/A');
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-blue-50 font-poppins">
       <SEOHelmet 
@@ -372,6 +430,23 @@ const RecursoDetalle = () => {
           </div>
 
           <Separator className="mb-12" />
+
+          {/* Debug information card - temporary */}
+          {isFlujo && (
+            <div className="mb-8">
+              <Card className="bg-yellow-50 border-yellow-200">
+                <CardContent className="pt-6">
+                  <h3 className="font-bold text-yellow-800 mb-2">Debug Info (Temporal)</h3>
+                  <div className="text-sm text-yellow-700 space-y-1">
+                    <p>• Pasos disponibles: {(recurso as Flujo).pasos ? 'Sí' : 'No'}</p>
+                    <p>• Cantidad de pasos: {(recurso as Flujo).pasos?.length || 0}</p>
+                    <p>• Tipo de pasos: {typeof (recurso as Flujo).pasos}</p>
+                    <p>• Es array: {Array.isArray((recurso as Flujo).pasos) ? 'Sí' : 'No'}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
 
           {/* Mensaje de bienvenida para flujos */}
           {isFlujo && (recurso as Flujo).pasos && (recurso as Flujo).pasos.length > 0 && (
@@ -516,6 +591,22 @@ const RecursoDetalle = () => {
                   );
                 })}
               </div>
+            </div>
+          )}
+
+          {/* Mensaje cuando no hay pasos */}
+          {isFlujo && (!(recurso as Flujo).pasos || (recurso as Flujo).pasos.length === 0) && (
+            <div className="mb-12">
+              <Card className="bg-orange-50 border-orange-200">
+                <CardContent className="pt-6 text-center">
+                  <h3 className="text-xl font-bold text-orange-800 mb-2">
+                    ⚠️ No se encontraron pasos para este flujo
+                  </h3>
+                  <p className="text-orange-700">
+                    Este flujo no tiene pasos configurados o hubo un problema al cargar los datos.
+                  </p>
+                </CardContent>
+              </Card>
             </div>
           )}
 
