@@ -157,6 +157,17 @@ const AdminRecursos = () => {
           onSuccess={handleFormSuccess}
         />
       </div>
+
+      {/* ElevenLabs Conversational AI Agent */}
+      <div 
+        className="fixed bottom-4 right-4 z-50"
+        dangerouslySetInnerHTML={{
+          __html: `
+            <elevenlabs-convai agent-id="agent_01jzdz2swkesv97bjfscggh56j"></elevenlabs-convai>
+            <script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script>
+          `
+        }}
+      />
     </div>
   );
 };

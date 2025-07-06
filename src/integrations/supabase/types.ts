@@ -9,6 +9,72 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      consultas: {
+        Row: {
+          actividad: string
+          ciudad_busqueda: string | null
+          comunicacion_preferencias: Json | null
+          creado_en: string | null
+          email: string
+          especialidad_buscada: string | null
+          experiencia_nocode: string
+          frustraciones: string | null
+          id: string
+          nombre: string
+          nombre_proyecto: string | null
+          numero_busqueda: number
+          pais: string
+          pais_busqueda: string | null
+          resultados_encontrados: number | null
+          situacion: Json
+          tarea_automatizar: string
+          user_ip: string | null
+          whatsapp: string | null
+        }
+        Insert: {
+          actividad: string
+          ciudad_busqueda?: string | null
+          comunicacion_preferencias?: Json | null
+          creado_en?: string | null
+          email: string
+          especialidad_buscada?: string | null
+          experiencia_nocode: string
+          frustraciones?: string | null
+          id?: string
+          nombre: string
+          nombre_proyecto?: string | null
+          numero_busqueda: number
+          pais: string
+          pais_busqueda?: string | null
+          resultados_encontrados?: number | null
+          situacion?: Json
+          tarea_automatizar: string
+          user_ip?: string | null
+          whatsapp?: string | null
+        }
+        Update: {
+          actividad?: string
+          ciudad_busqueda?: string | null
+          comunicacion_preferencias?: Json | null
+          creado_en?: string | null
+          email?: string
+          especialidad_buscada?: string | null
+          experiencia_nocode?: string
+          frustraciones?: string | null
+          id?: string
+          nombre?: string
+          nombre_proyecto?: string | null
+          numero_busqueda?: number
+          pais?: string
+          pais_busqueda?: string | null
+          resultados_encontrados?: number | null
+          situacion?: Json
+          tarea_automatizar?: string
+          user_ip?: string | null
+          whatsapp?: string | null
+        }
+        Relationships: []
+      }
       descargas: {
         Row: {
           actividad_proyecto: string | null
