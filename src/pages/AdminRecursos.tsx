@@ -160,7 +160,7 @@ const AdminRecursos = () => {
       </div>
 
       {/* ElevenLabs Conversational AI Agent */}
-      <ElevenLabsAgent agentId="agent_01jzdz2swkesv97bjfscggh56j" />
+      <ElevenLabsAgent agentId="agent_01jzh0ts0cf5ta62mx8c6kd28j" />
     </div>
   );
 };
