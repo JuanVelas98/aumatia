@@ -7,13 +7,118 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
   }
   public: {
     Tables: {
+      admin_sessions: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          last_activity: string
+          session_token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          last_activity?: string
+          session_token: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          last_activity?: string
+          session_token?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      admin_settings: {
+        Row: {
+          created_at: string
+          id: string
+          setting_key: string
+          setting_value: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          setting_key: string
+          setting_value: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          setting_key?: string
+          setting_value?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      beta_registrations: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          nombre: string
+          tarea_automatizar: string
+          updated_at: string
+          whatsapp: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          nombre: string
+          tarea_automatizar: string
+          updated_at?: string
+          whatsapp: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          nombre?: string
+          tarea_automatizar?: string
+          updated_at?: string
+          whatsapp?: string
+        }
+        Relationships: []
+      }
+      consulta_limits: {
+        Row: {
+          consultas_realizadas: number
+          creado_en: string
+          id: string
+          ultima_consulta: string | null
+          user_ip: string
+        }
+        Insert: {
+          consultas_realizadas?: number
+          creado_en?: string
+          id?: string
+          ultima_consulta?: string | null
+          user_ip: string
+        }
+        Update: {
+          consultas_realizadas?: number
+          creado_en?: string
+          id?: string
+          ultima_consulta?: string | null
+          user_ip?: string
+        }
+        Relationships: []
+      }
       consultas: {
         Row: {
           actividad: string
@@ -23,7 +128,8 @@ export type Database = {
           email: string
           especialidad_buscada: string | null
           experiencia_nocode: string
-          frustraciones: string | null
+          frustraciones: string
+          icp_generado: string | null
           id: string
           nombre: string
           nombre_proyecto: string | null
@@ -34,7 +140,7 @@ export type Database = {
           situacion: Json
           tarea_automatizar: string
           user_ip: string | null
-          whatsapp: string | null
+          whatsapp: string
         }
         Insert: {
           actividad: string
@@ -44,7 +150,8 @@ export type Database = {
           email: string
           especialidad_buscada?: string | null
           experiencia_nocode: string
-          frustraciones?: string | null
+          frustraciones?: string
+          icp_generado?: string | null
           id?: string
           nombre: string
           nombre_proyecto?: string | null
@@ -55,7 +162,7 @@ export type Database = {
           situacion?: Json
           tarea_automatizar: string
           user_ip?: string | null
-          whatsapp?: string | null
+          whatsapp?: string
         }
         Update: {
           actividad?: string
@@ -65,7 +172,8 @@ export type Database = {
           email?: string
           especialidad_buscada?: string | null
           experiencia_nocode?: string
-          frustraciones?: string | null
+          frustraciones?: string
+          icp_generado?: string | null
           id?: string
           nombre?: string
           nombre_proyecto?: string | null
@@ -76,7 +184,7 @@ export type Database = {
           situacion?: Json
           tarea_automatizar?: string
           user_ip?: string | null
-          whatsapp?: string | null
+          whatsapp?: string
         }
         Relationships: []
       }
@@ -170,6 +278,27 @@ export type Database = {
         }
         Relationships: []
       }
+      Feedback_productos: {
+        Row: {
+          fecha_subida: string
+          feedback: string | null
+          id: string
+          producto: string
+        }
+        Insert: {
+          fecha_subida?: string
+          feedback?: string | null
+          id?: string
+          producto: string
+        }
+        Update: {
+          fecha_subida?: string
+          feedback?: string | null
+          id?: string
+          producto?: string
+        }
+        Relationships: []
+      }
       flujos: {
         Row: {
           actualizado_en: string | null
@@ -206,6 +335,48 @@ export type Database = {
           pasos?: Json | null
           plataformas?: Json | null
           visible?: boolean
+        }
+        Relationships: []
+      }
+      fotovalentina: {
+        Row: {
+          dia: number
+          fecha_creacion: string | null
+          id: number
+          nombre: string
+          numero_turno: string
+        }
+        Insert: {
+          dia: number
+          fecha_creacion?: string | null
+          id?: number
+          nombre: string
+          numero_turno: string
+        }
+        Update: {
+          dia?: number
+          fecha_creacion?: string | null
+          id?: number
+          nombre?: string
+          numero_turno?: string
+        }
+        Relationships: []
+      }
+      n8n_chat_histories: {
+        Row: {
+          id: number
+          message: Json
+          session_id: string
+        }
+        Insert: {
+          id?: number
+          message: Json
+          session_id: string
+        }
+        Update: {
+          id?: number
+          message?: Json
+          session_id?: string
         }
         Relationships: []
       }
@@ -247,7 +418,26 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      authenticate_admin: {
+        Args: { p_password: string }
+        Returns: {
+          expires_at: string
+          message: string
+          session_token: string
+          success: boolean
+        }[]
+      }
+      logout_admin_session: {
+        Args: { p_session_token: string }
+        Returns: boolean
+      }
+      validate_admin_session: {
+        Args: { p_session_token: string }
+        Returns: {
+          expires_at: string
+          valid: boolean
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

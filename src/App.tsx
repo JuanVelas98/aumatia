@@ -10,6 +10,8 @@ import RecursoDetalle from "./pages/RecursoDetalle";
 import AdminRecursos from "./pages/AdminRecursos";
 import AdminMetrica from "./pages/AdminMetrica";
 import Hablar from "./pages/Hablar";
+import Admin from "./pages/Admin";
+import VerificarAcceso from "./pages/VerificarAcceso";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +28,8 @@ const App = () => (
           <Route path="/recursos/detalle" element={<RecursoDetalle />} />
           <Route path="/admin_recursos" element={<AdminRecursos />} />
           <Route path="/admin_metrica" element={<AdminMetrica />} />
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/verificar-acceso" element={<VerificarAcceso />} />
           <Route path="/hablar" element={<Hablar />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

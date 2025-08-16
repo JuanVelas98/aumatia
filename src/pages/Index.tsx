@@ -1,3 +1,6 @@
+
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,11 +14,36 @@ import { BookOpen, Settings, ArrowRight, Zap, Users, Target } from "lucide-react
 
 const Index = () => {
   const { registrarEvento } = useEventTracking();
+  const navigate = useNavigate();
+  const [shouldShowBetaOverlay, setShouldShowBetaOverlay] = useState(true);
   
   // Scroll visibility para secciones principales
   const heroRef = useScrollVisibility({ descripcion: 'Hero section' });
   const ctaRef = useScrollVisibility({ descripcion: 'CTA principal' });
   const featuresRef = useScrollVisibility({ descripcion: 'Features section' });
+
+  useEffect(() => {
+    // Verificar configuraciones de acceso
+    const mockupEnabled = localStorage.getItem('mockup_enabled');
+    const accessForAll = localStorage.getItem('access_for_all');
+    const userVerified = localStorage.getItem('user_verified');
+
+    console.log('Access control check:', { mockupEnabled, accessForAll, userVerified });
+
+    // Si mockup está desactivado
+    if (mockupEnabled === 'false') {
+      setShouldShowBetaOverlay(false);
+      
+      // Si "acceso para todos" no está activado, verificar autenticación
+      if (accessForAll !== 'true' && userVerified !== 'true') {
+        navigate('/verificar-acceso');
+        return;
+      }
+    } else {
+      // Mockup habilitado por defecto
+      setShouldShowBetaOverlay(true);
+    }
+  }, [navigate]);
 
   const handleWhatsAppClick = () => {
     registrarEvento({
@@ -208,7 +236,16 @@ const Index = () => {
               
               <div className="text-center md:text-right">
                 <p className="text-gray-300 mb-2">Síguenos en nuestras redes</p>
-                <SocialLinks />
+                <div className="flex items-center gap-4 justify-center md:justify-end">
+                  <SocialLinks />
+                  <Link 
+                    to="/admin" 
+                    className="text-gray-400 hover:text-gray-300 transition-colors ml-2"
+                    title="Panel de administración"
+                  >
+                    <Settings className="w-4 h-4" />
+                  </Link>
+                </div>
               </div>
             </div>
             
