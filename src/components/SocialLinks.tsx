@@ -1,5 +1,6 @@
+
 import { useEventTracking } from "@/hooks/useEventTracking";
-import { Instagram, Youtube, MessageCircle } from "lucide-react";
+import { Instagram, Youtube, MessageCircle, Linkedin } from "lucide-react";
 
 interface SocialLinksProps {
   iconSize?: number;
@@ -36,6 +37,14 @@ export const SocialLinks = ({
         aria-label="Síguenos en YouTube"
       >
         <Youtube size={iconSize} />
+      </button>
+
+      <button
+        onClick={() => handleSocialClick('LinkedIn', 'https://www.linkedin.com/company/aumatia/')}
+        className="text-gray-600 hover:text-blue-600 transition-colors p-2 rounded-full hover:bg-gray-100"
+        aria-label="Síguenos en LinkedIn"
+      >
+        <Linkedin size={iconSize} />
       </button>
       
       <button
