@@ -1,0 +1,25 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches: ["main"]      # cambia si despliegas otra rama
+  workflow_dispatch: {}      # permite correrlo manualmente
+
+concurrency:
+  group: deploy-aumatia
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ejecutar deploy remoto
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          script_stop: true
+          script: |
+            bash /var/www/aumatia/deploy.sh
