@@ -108,7 +108,7 @@ export const LeadsQuestionnaireModal = ({ isOpen, onClose, icp }: LeadsQuestionn
     setIsLoading(true);
 
     try {
-      // Preparar datos para Supabase
+      // Preparar datos para Supabase con todos los campos requeridos
       const consultaData = {
         nombre: formData.nombre,
         email: formData.email,
@@ -120,7 +120,15 @@ export const LeadsQuestionnaireModal = ({ isOpen, onClose, icp }: LeadsQuestionn
         tarea_automatizar: formData.tarea_automatizar,
         frustraciones: formData.frustraciones,
         comunicacion_preferencias: formData.comunicacion_preferencias,
-        icp_generado: icp || null
+        icp_generado: icp || null,
+        numero_busqueda: 0, // Agregar campo requerido
+        // Campos opcionales que pueden ser null
+        ciudad_busqueda: null,
+        especialidad_buscada: null,
+        pais_busqueda: null,
+        resultados_encontrados: 0,
+        user_ip: null,
+        nombre_proyecto: 'Leads Questionnaire'
       };
 
       // Guardar en Supabase
