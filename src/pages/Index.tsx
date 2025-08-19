@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
@@ -119,18 +118,15 @@ const Index = () => {
                           <Zap className="mr-3 w-6 h-6" />
                           Automatizar mi empresa
                         </Button>
-                        <div className="text-white/80">
-                          <p className="text-sm mb-3">O explorá nuestros recursos listos para usar</p>
-                          <Link to="/recursos" onClick={handleRecursosClick}>
-                            <Button 
-                              size="lg" 
-                              className="bg-[#4A90E2] text-white hover:bg-[#357ABD] hover:shadow-lg hover:-translate-y-1 font-semibold px-6 md:px-8 py-3 rounded-full transition-all duration-300"
-                            >
-                              Ver recursos gratuitos
-                              <ArrowRight className="ml-2 w-5 h-5" />
-                            </Button>
-                          </Link>
-                        </div>
+                        <Link to="/recursos" onClick={handleRecursosClick}>
+                          <Button 
+                            size="lg" 
+                            className="bg-[#4A90E2] text-white hover:bg-[#357ABD] hover:shadow-lg hover:-translate-y-1 font-semibold px-6 md:px-8 py-3 rounded-full transition-all duration-300"
+                          >
+                            Ver recursos gratuitos
+                            <ArrowRight className="ml-2 w-5 h-5" />
+                          </Button>
+                        </Link>
                       </div>
                     </div>
                   </section>
