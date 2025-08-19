@@ -1,6 +1,6 @@
 
 import { useEventTracking } from "@/hooks/useEventTracking";
-import { Instagram, Youtube, MessageCircle } from "lucide-react";
+import { Instagram, Youtube, Phone } from "lucide-react";
 
 interface SocialLinksProps {
   iconSize?: number;
@@ -41,10 +41,10 @@ export const SocialLinks = ({
       
       <button
         onClick={() => handleSocialClick('WhatsApp', 'https://wa.link/dmvgi0')}
-        className="text-gray-600 hover:text-aumatia-blue transition-colors p-2 rounded-full hover:bg-gray-100"
+        className="text-gray-600 hover:text-green-600 transition-colors p-2 rounded-full hover:bg-gray-100"
         aria-label="Contáctanos por WhatsApp"
       >
-        <MessageCircle size={iconSize} />
+        <Phone size={iconSize} />
       </button>
     </div>
   );
